@@ -18,7 +18,7 @@ void initialize(pool_t *pool){
 }
 
 void place(pool_t *pool, int data){
-  pthread_mutex_lock (&mtx);
+  pthread_mutex_lock(&mtx);
   while(pool->count >= POOL_SIZE){
     printf(">> Found  Buffer  Full \n");
     pthread_cond_wait(&cond_nonfull, &mtx);
@@ -34,7 +34,7 @@ int obtain(pool_t *pool){
   pthread_mutex_lock (&mtx);
   while(pool->count <= 0) {
     printf(">> Found  Buffer  Empty \n");
-    pthread_cond_wait (& cond_nonempty , &mtx);
+    pthread_cond_wait(&cond_nonempty, &mtx);
   }
   data = pool ->data[pool->start];
   pool->start = (pool ->start + 1) % POOL_SIZE;

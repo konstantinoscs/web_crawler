@@ -4,8 +4,10 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "pool.h"
@@ -42,16 +44,30 @@ void *thread_serve(void *i){
     fd = obtain(&pool);
     printf("Got fd:%d\n", fd);
     pthread_cond_signal(&cond_nonfull);
+    if(fd==-1)
+      break;
   }
   pthread_exit(NULL);
 }
 
-void command(int sock){
+int command(int sock, clock_t start, int pages, long bytes){
   static char cmd[9];
   int i=0;
-  while((read(sock, cmd+i, 1) > 0) && i<8) i++;
+  while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!='\n') i++;
   cmd[i] = '\0';
-  printf("Command: %s", cmd);
+  printf("Command: %s\n", cmd);
+  if(!strcmp(cmd, "STATS")){
+    clock_t end = clock();
+    float uptime = (float) (end - start) / CLOCKS_PER_SEC;
+    printf("Server up for %lf, served %d pages, %ld bytes\n", uptime, pages, bytes);
+  }
+  else if(!strcmp(cmd, "SHUTDOWN")){
+    return 0;
+  }
+  else{
+    printf("Unknown command!\n");
+  }
+  return 1;
 }
 
 void make_fds_array(int c_sock, int s_sock, struct pollfd *fds){
@@ -61,9 +77,11 @@ void make_fds_array(int c_sock, int s_sock, struct pollfd *fds){
 }
 
 int server_operate(int no_threads, int c_port, int s_port){
-  int c_sock, s_sock, newsock;
+  int c_sock, s_sock, newsock, pages=0;
   struct pollfd fds[2];
   pthread_t *threads = NULL;
+  long bytes = 0;
+  clock_t start = clock();
   //create threads
   if((threads = malloc(no_threads*sizeof(pthread_t))) == NULL){
     perror("threads malloc:"); exit(-2); }
@@ -104,7 +122,13 @@ int server_operate(int no_threads, int c_port, int s_port){
       printf("command ready\n");
       if((newsock = accept(c_sock, NULL, NULL)) < 0){
         perror("accept"); exit(-4);}
-      command(newsock);
+      if(!command(newsock, start, pages, bytes)){
+        for(int i=0; i<no_threads; i++){
+          place(&pool, -1);
+          pthread_cond_signal(&cond_nonempty);
+        }
+        break;
+      }
     }
     else if(fds[1].revents == POLLHUP){
 
