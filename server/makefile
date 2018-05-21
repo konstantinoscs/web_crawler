@@ -1,8 +1,8 @@
 CC = gcc
 FLAGS = -Wall
-DEPS = pool.h server.h utilities.h
+DEPS = get.h pool.h server.h utilities.h
 NAME = myhttpd
-SOURCE = servermain.c pool.c server.c utilities.c
+SOURCE = get.c pool.c servermain.c server.c utilities.c
 OBJ = $(SOURCE:.c=.o)
 
 %.o : %.c

@@ -10,6 +10,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "get.h"
 #include "pool.h"
 
 extern pthread_mutex_t mtx;
@@ -46,6 +47,7 @@ void *thread_serve(void *i){
     pthread_cond_signal(&cond_nonfull);
     if(fd==-1)
       break;
+    get(fd);
   }
   pthread_exit(NULL);
 }
@@ -122,7 +124,9 @@ int server_operate(int no_threads, int c_port, int s_port){
       printf("command ready\n");
       if((newsock = accept(c_sock, NULL, NULL)) < 0){
         perror("accept"); exit(-4);}
+      //execute command
       if(!command(newsock, start, pages, bytes)){
+        //if command was SHUTDOWN, send message to threads
         for(int i=0; i<no_threads; i++){
           place(&pool, -1);
           pthread_cond_signal(&cond_nonempty);
