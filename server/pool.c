@@ -14,7 +14,7 @@ void initialize(pool_t *pool){
   pool->start = 0;
   pool->end = -1;
   pool->count = 0;
-  pool->data = malloc(30*sizeof(int));
+  //pool->data = malloc(30*sizeof(int));
 }
 
 void place(pool_t *pool, int data){

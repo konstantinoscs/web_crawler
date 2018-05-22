@@ -2,7 +2,7 @@
 #define POOL_H
 
 typedef struct{
-  int *data;
+  int data[30];
   int start;
   int end;
   int count;

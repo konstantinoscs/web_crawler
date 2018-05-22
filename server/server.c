@@ -47,9 +47,9 @@ void *thread_serve(void *i){
     pthread_cond_signal(&cond_nonfull);
     if(fd==-1)
       break;
-    get(fd);
+    get(fd);    //serve the get request
   }
-  pthread_exit(NULL);
+  //pthread_exit(NULL);
 }
 
 int command(int sock, clock_t start, int pages, long bytes){

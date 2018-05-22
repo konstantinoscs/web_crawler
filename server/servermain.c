@@ -9,4 +9,5 @@ int main(int argc, char **argv){
   char *root_dir=NULL;
   parse_arguments(argc, argv, &root_dir, &no_threads, &c_port, &s_port);
   server_operate(no_threads, c_port, s_port);
+  free(root_dir);
 }
