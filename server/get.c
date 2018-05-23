@@ -3,7 +3,23 @@
 #include <string.h>
 #include <unistd.h>
 
+int verify_get(char **request, int reqsize);
+int parse_get(int fd, char*** paths, int *pathsize);
 //parsedocfile reads all the paths in the file specified by doc
+
+int get(int fd){
+  char **request;
+  int reqsize;
+  if(!parse_get(fd, &request, &reqsize) || !verify_get(request, reqsize))
+    fprintf(stderr,"Bad request!\n");
+  for(int i=0; i<reqsize; i++)
+    printf("%s\n", request[i]);
+  printf("END\n");
+  for(int i=0; i<reqsize; i++)
+    free(request[i]);
+  free(request);
+}
+
 int parse_get(int fd, char*** paths, int *pathsize){
   int docm = 8, docc=0; //arbitary start from 8 words
   int wordm = 2, wordc=0; //start from a word with 2 characters
@@ -70,15 +86,15 @@ int verify_get(char **request, int reqsize){
   return hostok;
 }
 
-int get(int fd){
-  char **request;
-  int reqsize;
-  if(!parse_get(fd, &request, &reqsize) || !verify_get(request, reqsize))
-    fprintf(stderr,"Bad request!\n");
-  for(int i=0; i<reqsize; i++)
-    printf("%s\n", request[i]);
-  printf("END\n");
-  for(int i=0; i<reqsize; i++)
-    free(request[i]);
-  free(request);
+int response_200_ok(){
+
 }
+
+int response_404_not_found(){
+
+}
+
+int response_403_forbidden(){
+
+}
+
