@@ -5,16 +5,23 @@
 
 int verify_get(char **request, int reqsize);
 int parse_get(int fd, char*** paths, int *pathsize);
-//parsedocfile reads all the paths in the file specified by doc
+void get_file_path(char *get_header, char **path, int *size);
+int serve_request();
+
 
 int get(int fd){
-  char **request;
-  int reqsize;
+  char **request = NULL;
+  int reqsize=0, pathsize=0;
+	char *path = NULL;
+
   if(!parse_get(fd, &request, &reqsize) || !verify_get(request, reqsize))
     fprintf(stderr,"Bad request!\n");
   for(int i=0; i<reqsize; i++)
     printf("%s\n", request[i]);
   printf("END\n");
+	//get path of file
+	get_file_path(request[0], &path, &pathsize);
+	serve_request();
   for(int i=0; i<reqsize; i++)
     free(request[i]);
   free(request);
@@ -84,6 +91,20 @@ int verify_get(char **request, int reqsize){
       break;
     }
   return hostok;
+}
+
+//returns the file that we want to serve
+void get_file_path(char *get_header, char **path, int *size){
+	//point to start of the path (after "GET ")
+	char *t_path = get_header+4;
+	int sz = 0;
+	while(t_path[sz++]!=' ') continue;
+	*size = sz;
+	*path = t_path;	
+}
+
+int serve_request(){
+
 }
 
 int response_200_ok(){
