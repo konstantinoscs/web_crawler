@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 int verify_get(char **request, int reqsize);
@@ -129,14 +130,13 @@ int response_200_ok(){
 }
 
 int response_403_forbidden(){
-  static char *message = "<html>Trying to access this file but I don't think
-  I can make it.</html>";
-  static char **lines = ["HTTP/1.1 403 Forbidden",
+  static char *message = "<html>Trying to access this file but I don't thin I can make it.</html>";
+  static char *lines[] = {"HTTP/1.1 403 Forbidden",
     "Date: ",
     "Server: myhttpd/1.0.0",
     "Content-Length: ",
     "Content-Type: text/html",
-    "Connection: Closed"];
+    "Connection: Closed"};
   time_t rtime;
   struct tm *tinfo;
   time(&rtime);
@@ -144,12 +144,12 @@ int response_403_forbidden(){
 
 int response_404_not_found(){
   static char *message = "<html>Sorry dude, couldn't find this file.</html>";
-  static char **lines = ["HTTP/1.1 404 Not Found",
+  static char *lines[] = {"HTTP/1.1 404 Not Found",
     "Date: ",
     "Server: myhttpd/1.0.0",
     "Content-Length: ",
     "Content-Type: text/html",
-    "Connection: Closed"];
+    "Connection: Closed"};
   time_t rtime;
   struct tm *tinfo;
   time(&rtime);
