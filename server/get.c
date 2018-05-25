@@ -105,7 +105,7 @@ void get_file_path(char *get_header, char **path, int *size){
 	*path = t_path;
 }
 
-int serve_request(char *file){
+int serve_request(int fd, char *file){
   FILE *fp = fopen(file, "r");
   if(fp){
     //all ok, proceed with 200
@@ -125,11 +125,14 @@ int serve_request(char *file){
   }
 }
 
-int response_200_ok(){
-
+int response_200_ok(int fd){
+	time_t rtime;
+  struct tm *tinfo;
+  time(&rtime);
+	tinfo = localtime(&rtime);
 }
 
-int response_403_forbidden(){
+int response_403_forbidden(int fd){
   static char *message = "<html>Trying to access this file but I don't thin I can make it.</html>";
   static char *lines[] = {"HTTP/1.1 403 Forbidden",
     "Date: ",
@@ -140,9 +143,10 @@ int response_403_forbidden(){
   time_t rtime;
   struct tm *tinfo;
   time(&rtime);
+	tinfo = localtime(&rtime);
 }
 
-int response_404_not_found(){
+int response_404_not_found(int fd){
   static char *message = "<html>Sorry dude, couldn't find this file.</html>";
   static char *lines[] = {"HTTP/1.1 404 Not Found",
     "Date: ",
@@ -153,9 +157,17 @@ int response_404_not_found(){
   time_t rtime;
   struct tm *tinfo;
   time(&rtime);
+	tinfo = localtime(&rtime);
+	if(write(fd, lines[0], strlen(lines[0]))==-1){
+		perror("Response failed "); exit(-2); }
+	if(write(fd, lines[1], strlen(lines[1]))==-1){
+		perror("Response failed "); exit(-2); }
 
 }
 
-int response_500_internal_server_error(){
-
+int response_500_internal_server_error(int fd){
+	time_t rtime;
+  struct tm *tinfo;
+  time(&rtime);
+	tinfo = localtime(&rtime);
 }

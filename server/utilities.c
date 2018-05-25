@@ -28,3 +28,13 @@ int parse_arguments(int argc, char ** argv, char** root_dir, int *no_threads,
   //printf("w is %d\n", *num_workers);
   return 1;
 }
+
+int map_day(int dayd, char**days){
+	static char *day[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+	if(sizeof(*days)<4){
+		*days = NULL;
+		return 0;
+	}
+	strncpy(*days, day[dayd], 3);
+	return 1;
+}
