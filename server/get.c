@@ -9,26 +9,36 @@
 
 int verify_get(char **request, int reqsize);
 int parse_get(int fd, char*** paths, int *pathsize);
-void get_file_path(char *get_header, char **path, int *size);
-int serve_request();
+void get_file_path(char *get_header, char *root_dir, char **path);
+int serve_request(int fd, char *file);
+int response_200_ok(int fd, FILE *fp);
+int response_403_forbidden(int fd);
+int response_404_not_found(int fd);
+int response_500_internal_server_error(int fd);
+void write_response(int fd, char *fline, char *message);
 
 
-int get(int fd){
+int get(int fd, char *root_dir){
   char **request = NULL;
   int reqsize=0, pathsize=0;
 	char *path = NULL;
 
-  if(!parse_get(fd, &request, &reqsize) || !verify_get(request, reqsize))
+  if(!parse_get(fd, &request, &reqsize) || !verify_get(request, reqsize)){
     fprintf(stderr,"Bad request!\n");
+    return 0;
+  }
   for(int i=0; i<reqsize; i++)
     printf("%s\n", request[i]);
   printf("END\n");
 	//get path of file
-	get_file_path(request[0], &path, &pathsize);
-	serve_request();
+	get_file_path(request[0], root_dir, &path);
+  //printf("GOT PATH %s\n", path);
+	serve_request(fd, path);
   for(int i=0; i<reqsize; i++)
     free(request[i]);
   free(request);
+  free(path);
+  printf("bye request\n");
 }
 
 int parse_get(int fd, char*** paths, int *pathsize){
@@ -79,8 +89,6 @@ int parse_get(int fd, char*** paths, int *pathsize){
     wordc = 0;
   }
   *paths = realloc(*paths, (*pathsize)*sizeof(char*)); //shrink to fit
-  //*pathsize = id+1;
-  //fclose(docf);
   return 1;
 }
 
@@ -98,74 +106,89 @@ int verify_get(char **request, int reqsize){
 }
 
 //returns the file that we want to serve
-void get_file_path(char *get_header, char **path, int *size){
+void get_file_path(char *get_header, char *root_dir, char **path){
 	//point to start of the path (after "GET ")
 	char *t_path = get_header+4;
-	int sz = 0;
-	while(t_path[sz++]!=' ') continue;
-	*size = sz;
-	*path = t_path;
+	int sz = 0, len;
+	while(t_path[sz]!=' ') sz++;
+  len = strlen(root_dir) +sz;
+  *path = malloc(len+1);
+  strncpy(*path, root_dir, strlen(root_dir));
+  strncpy((*path)+strlen(root_dir), t_path, sz);
+  (*path)[len] = '\0';
+	//*path = t_path;
 }
 
 int serve_request(int fd, char *file){
   FILE *fp = fopen(file, "r");
   if(fp){
     //all ok, proceed with 200
-    //response_200_ok()
+    response_200_ok(fd, fp);
   }
   else if(errno == EACCES){
     //server doesn't have permission, send 403
-    //response_403_forbidden();
+    response_403_forbidden(fd);
   }
   else if(errno == ENOENT){
     //file doesn't exist, send 404
-    //response_404_not_found();
+    printf("404\n");
+    response_404_not_found(fd);
   }
   else{
     //not 403 or 404 so send 500
-    //response_500_internal_server_error()
+    response_500_internal_server_error(fd);
   }
+  fclose(fp);
 }
 
-int response_200_ok(int fd){
-	time_t rtime;
-  struct tm *tinfo;
-  time(&rtime);
-	tinfo = localtime(&rtime);
+int response_200_ok(int fd, FILE *fp){
+  char *message = NULL;
+  static char *fline = "HTTP/1.1 200 OK\r\n";
+  read_file(&message, fp);  //load file to message variable
+  write_response(fd, fline, message);
+  if(message)
+    free(message);
 }
 
 int response_403_forbidden(int fd){
   static char *message = "<html>Trying to access this file but I don't thin I can make it.</html>";
-  static char *lines[] = {"HTTP/1.1 403 Forbidden\r\n",
-    "Date: ",
-    "Server: myhttpd/1.0.0\r\n",
-    "Content-Length: ",
-    "Content-Type: text/html\r\n",
-    "Connection: Closed\r\n"};
-  time_t rtime;
-  struct tm *tinfo;
-  time(&rtime);
-	tinfo = localtime(&rtime);
+  static char *fline = "HTTP/1.1 403 Forbidden\r\n";
+  write_response(fd, fline, message);
 }
 
 int response_404_not_found(int fd){
-	static char day[4], month[4], stamp[100];
   static char *message = "<html>Sorry dude, couldn't find this file.</html>";
-  static char *lines[] = {"HTTP/1.1 404 Not Found\r\n",
-    "Date: ",
+  static char *fline = "HTTP/1.1 404 Not Found\r\n";
+  write_response(fd, fline, message);
+}
+
+int response_500_internal_server_error(int fd){
+  static char *message = "<html>Something went terribly wrong</html>";
+  static char *fline = "HTTP/1.1 500 Internal Server Error\r\n";
+  write_response(fd, fline, message);
+}
+
+void write_response(int fd, char *fline, char *message){
+  static char day[4];
+  static char month[4];
+  static char stamp[100];
+  static char *lines[] = {"Date: ",
     "Server: myhttpd/1.0.0\r\n",
     "Content-Length: ",
     "Content-Type: text/html\r\n",
     "Connection: Closed\r\n"};
-	static char *newline = "\r\n";
-  time_t rtime;
-  struct tm *tinfo;
+  static char *newline = "\r\n";
+  static time_t rtime;
+  static struct tm *tinfo;
   time(&rtime);
 	tinfo = localtime(&rtime);
-	if(write(fd, lines[0], strlen(lines[0])) == -1){
+
+  //HTTP1.1 <code> <message>
+	if(write(fd, fline, strlen(fline)) == -1){
 		perror("Response failed "); exit(-2); }
-	
-	if(write(fd, lines[1], strlen(lines[1])) == -1){
+
+  //Date:
+	if(write(fd, lines[0], strlen(lines[0])) == -1){
 		perror("Response failed "); exit(-2); }
 	//convert int of day to string
 	map_day(day, tinfo->tm_wday);
@@ -175,21 +198,26 @@ int response_404_not_found(int fd){
 	if(write(fd, stamp, strlen(stamp)) == -1){
 		perror("Response failed "); exit(-2); }
 
-	if(write(fd, lines[2], strlen(lines[2])) == -1){
+  //Server: myhttpd/1.0.0
+	if(write(fd, lines[1], strlen(lines[1])) == -1){
 		perror("Response failed "); exit(-2); }
 
+  //"Content-Length: <strlen(message)>"
+  if(write(fd, lines[2], strlen(lines[2])) == -1){
+		perror("Response failed "); exit(-2); }
+  sprintf(stamp, "%lu\r\n", strlen(message));
+  if(write(fd, stamp, strlen(stamp)) == -1){
+		perror("Response failed "); exit(-2); }
+
+  //Content-Type: text/html
+	if(write(fd, lines[3], strlen(lines[3])) == -1){
+		perror("Response failed "); exit(-2); }
+  //Connection: Closed
 	if(write(fd, lines[4], strlen(lines[4])) == -1){
 		perror("Response failed "); exit(-2); }
-	if(write(fd, lines[5], strlen(lines[5])) == -1){
-		perror("Response failed "); exit(-2); }
-	//write the message and we're done!
-	if(write(fd, message, strlen(message)) == -1){
-		perror("Response failed "); exit(-2); }
-}
-
-int response_500_internal_server_error(int fd){
-	time_t rtime;
-  struct tm *tinfo;
-  time(&rtime);
-	tinfo = localtime(&rtime);
+  if(write(fd, newline, strlen(newline)) == -1){
+  	perror("Response failed "); exit(-2); }
+  //write the message and we're done!
+  if(write(fd, message, strlen(message)) == -1){
+  	perror("Response failed "); exit(-2); }
 }

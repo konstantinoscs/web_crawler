@@ -39,15 +39,18 @@ int set_socket(int port, int *sock){
 
 //thread method that serves GET requests
 void *thread_serve(void *i){
+  char *root_dir = (char *)i;
+  printf("Thread root dir: %s\n", root_dir);
   int fd;
-  printf("Thread %d!\n", *(int *)i);
+  //printf("Thread %d!\n", *(int *)i);
   while(1){
     fd = obtain(&pool);
     printf("Got fd:%d\n", fd);
     pthread_cond_signal(&cond_nonfull);
     if(fd==-1)
       break;
-    get(fd);    //serve the get request
+    get(fd, root_dir);    //serve the get request
+    close(fd); //close socket
   }
   //pthread_exit(NULL);
 }
@@ -78,7 +81,7 @@ void make_fds_array(int c_sock, int s_sock, struct pollfd *fds){
   fds[0].events = fds[1].events = POLLIN;
 }
 
-int server_operate(int no_threads, int c_port, int s_port){
+int server_operate(char *root_dir, int no_threads, int c_port, int s_port){
   int c_sock, s_sock, newsock, pages=0;
   struct pollfd fds[2];
   pthread_t *threads = NULL;
@@ -93,7 +96,7 @@ int server_operate(int no_threads, int c_port, int s_port){
   pthread_cond_init(&cond_nonfull, NULL);
   //create threads
   for(int i=0; i<no_threads; i++){
-    if(pthread_create(threads+i, NULL, thread_serve, (void *)&i)){
+    if(pthread_create(threads+i, NULL, thread_serve, (void *)root_dir)){
       perror("thread create:"); exit(-3); }
   }
   //set the two sockets
