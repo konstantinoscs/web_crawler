@@ -39,11 +39,31 @@ int map_day(char*days, int dayd){
 }
 
 int map_month(char*months, int monthd){
-	static char *month[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+	static char *month[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 		"Sep", "Oct", "Nov", "Dec"};
 	if(sizeof(months) < 4)
 		return 0;
 	strncpy(months, month[monthd], 3);
 	months[3] = '\0';
 	return 1;
+}
+
+int read_file(char **message, FILE *fp){
+  char *text = malloc(2);
+  int wordm = 2, wordc=0; //start from a word with 2 characters
+  int ch;
+  ch = fgetc(fp);
+  while(ch != EOF){
+    if(wordc+1 == wordm){  //realloc condition -- save space for '\0'
+      wordm *= 2;
+      text = realloc(text, wordm);
+    }
+    text[wordc++] = ch; //save character in text
+
+    ch = fgetc(fp);
+  } //text is saved exactly as read --including whitespace
+  text[wordc] ='\0';
+  text = realloc(text, wordc+1); //shrink to fit
+  *message = text;
+  return 1;
 }
