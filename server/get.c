@@ -5,6 +5,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "utilities.h"
+
 int verify_get(char **request, int reqsize);
 int parse_get(int fd, char*** paths, int *pathsize);
 void get_file_path(char *get_header, char **path, int *size);
@@ -134,12 +136,12 @@ int response_200_ok(int fd){
 
 int response_403_forbidden(int fd){
   static char *message = "<html>Trying to access this file but I don't thin I can make it.</html>";
-  static char *lines[] = {"HTTP/1.1 403 Forbidden",
+  static char *lines[] = {"HTTP/1.1 403 Forbidden\r\n",
     "Date: ",
-    "Server: myhttpd/1.0.0",
+    "Server: myhttpd/1.0.0\r\n",
     "Content-Length: ",
-    "Content-Type: text/html",
-    "Connection: Closed"};
+    "Content-Type: text/html\r\n",
+    "Connection: Closed\r\n"};
   time_t rtime;
   struct tm *tinfo;
   time(&rtime);
@@ -147,22 +149,33 @@ int response_403_forbidden(int fd){
 }
 
 int response_404_not_found(int fd){
+	static char day[5];
+	static char *stamp[100];
   static char *message = "<html>Sorry dude, couldn't find this file.</html>";
-  static char *lines[] = {"HTTP/1.1 404 Not Found",
+  static char *lines[] = {"HTTP/1.1 404 Not Found\r\n",
     "Date: ",
-    "Server: myhttpd/1.0.0",
+    "Server: myhttpd/1.0.0\r\n",
     "Content-Length: ",
-    "Content-Type: text/html",
-    "Connection: Closed"};
+    "Content-Type: text/html\r\n",
+    "Connection: Closed\r\n"};
+	static char *newline = "\r\n";
   time_t rtime;
   struct tm *tinfo;
   time(&rtime);
 	tinfo = localtime(&rtime);
-	if(write(fd, lines[0], strlen(lines[0]))==-1){
+	if(write(fd, lines[0], strlen(lines[0])) == -1){
 		perror("Response failed "); exit(-2); }
-	if(write(fd, lines[1], strlen(lines[1]))==-1){
+	#write newline
+	if(write(fd, newline, 2) == -1){
+		perror("Response failed "); exit (-2);}
+	if(write(fd, lines[1], strlen(lines[1])) == -1){
 		perror("Response failed "); exit(-2); }
-
+	#convert int of day to string
+	map_day(tinfo->tm_wday, day);
+	#put in stamp the formated timestamp
+	sprintf(stamp, "%s, %d %s %d %d:%d:%d GMT\r\n", day,);
+	if(write(fd, day, strlen(day)) == -1){
+		perror("Response failed "); exit(-2); }
 }
 
 int response_500_internal_server_error(int fd){
