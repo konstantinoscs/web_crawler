@@ -149,8 +149,7 @@ int response_403_forbidden(int fd){
 }
 
 int response_404_not_found(int fd){
-	static char day[5];
-	static char *stamp[100];
+	static char day[4], month[4], stamp[100];
   static char *message = "<html>Sorry dude, couldn't find this file.</html>";
   static char *lines[] = {"HTTP/1.1 404 Not Found\r\n",
     "Date: ",
@@ -165,16 +164,26 @@ int response_404_not_found(int fd){
 	tinfo = localtime(&rtime);
 	if(write(fd, lines[0], strlen(lines[0])) == -1){
 		perror("Response failed "); exit(-2); }
-	#write newline
-	if(write(fd, newline, 2) == -1){
-		perror("Response failed "); exit (-2);}
+	
 	if(write(fd, lines[1], strlen(lines[1])) == -1){
 		perror("Response failed "); exit(-2); }
-	#convert int of day to string
-	map_day(tinfo->tm_wday, day);
-	#put in stamp the formated timestamp
-	sprintf(stamp, "%s, %d %s %d %d:%d:%d GMT\r\n", day,);
-	if(write(fd, day, strlen(day)) == -1){
+	//convert int of day to string
+	map_day(day, tinfo->tm_wday);
+	map_month(month, tinfo->tm_mon);
+	//put in stamp the formated timestamp
+	sprintf(stamp, "%s, %d %s %d %d:%d:%d GMT\r\n", day, tinfo->tm_mday, month, tinfo->tm_year+1900, tinfo->tm_hour, tinfo->tm_min, tinfo->tm_sec);
+	if(write(fd, stamp, strlen(stamp)) == -1){
+		perror("Response failed "); exit(-2); }
+
+	if(write(fd, lines[2], strlen(lines[2])) == -1){
+		perror("Response failed "); exit(-2); }
+
+	if(write(fd, lines[4], strlen(lines[4])) == -1){
+		perror("Response failed "); exit(-2); }
+	if(write(fd, lines[5], strlen(lines[5])) == -1){
+		perror("Response failed "); exit(-2); }
+	//write the message and we're done!
+	if(write(fd, message, strlen(message)) == -1){
 		perror("Response failed "); exit(-2); }
 }
 

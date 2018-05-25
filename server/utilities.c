@@ -29,12 +29,21 @@ int parse_arguments(int argc, char ** argv, char** root_dir, int *no_threads,
   return 1;
 }
 
-int map_day(int dayd, char**days){
+int map_day(char*days, int dayd){
 	static char *day[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-	if(sizeof(*days)<4){
-		*days = NULL;
+	if(sizeof(days)<4)
 		return 0;
-	}
-	strncpy(*days, day[dayd], 3);
+	strncpy(days, day[dayd], 3);
+	days[3] = '\0';
+	return 1;
+}
+
+int map_month(char*months, int monthd){
+	static char *month[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+		"Sep", "Oct", "Nov", "Dec"};
+	if(sizeof(months) < 4)
+		return 0;
+	strncpy(months, month[monthd], 3);
+	months[3] = '\0';
 	return 1;
 }
