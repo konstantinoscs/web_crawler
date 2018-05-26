@@ -22,6 +22,7 @@ int get(int fd, char *root_dir){
   char **request = NULL;
   int reqsize=0, pathsize=0;
 	char *path = NULL;
+  int served = 0;
 
   if(!parse_get(fd, &request, &reqsize) || !verify_get(request, reqsize)){
     fprintf(stderr,"Bad request!\n");
@@ -33,12 +34,13 @@ int get(int fd, char *root_dir){
 	//get path of file
 	get_file_path(request[0], root_dir, &path);
   //printf("GOT PATH %s\n", path);
-	serve_request(fd, path);
+	served = serve_request(fd, path);
   for(int i=0; i<reqsize; i++)
     free(request[i]);
   free(request);
   free(path);
   printf("bye request\n");
+  return served;  //return no of bytes if a page has been served (stats)
 }
 
 int parse_get(int fd, char*** paths, int *pathsize){
@@ -121,9 +123,10 @@ void get_file_path(char *get_header, char *root_dir, char **path){
 
 int serve_request(int fd, char *file){
   FILE *fp = fopen(file, "r");
+  int serve = 0;
   if(fp){
     //all ok, proceed with 200
-    response_200_ok(fd, fp);
+    serve = response_200_ok(fd, fp);
   }
   else if(errno == EACCES){
     //server doesn't have permission, send 403
@@ -139,6 +142,8 @@ int serve_request(int fd, char *file){
     response_500_internal_server_error(fd);
   }
   fclose(fp);
+  //return if a page has been served to update stats;
+  return serve;
 }
 
 int response_200_ok(int fd, FILE *fp){
@@ -146,8 +151,11 @@ int response_200_ok(int fd, FILE *fp){
   static char *fline = "HTTP/1.1 200 OK\r\n";
   read_file(&message, fp);  //load file to message variable
   write_response(fd, fline, message);
+  int bytes = strlen(message);
   if(message)
     free(message);
+  //return how many bytes were served for statistics
+  return bytes;
 }
 
 int response_403_forbidden(int fd){

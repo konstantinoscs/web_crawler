@@ -17,6 +17,9 @@ extern pthread_mutex_t mtx;
 extern pthread_cond_t cond_nonempty;
 extern pthread_cond_t cond_nonfull;
 extern pool_t pool;
+pthread_mutex_t p_mut = PTHREAD_MUTEX_INITIALIZER;
+int pages_served = 0;
+unsigned long bytes_served = 0;
 
 int set_socket(int port, int *sock){
   //int sock;
@@ -41,7 +44,7 @@ int set_socket(int port, int *sock){
 void *thread_serve(void *i){
   char *root_dir = (char *)i;
   printf("Thread root dir: %s\n", root_dir);
-  int fd;
+  int fd, page, bytes;
   //printf("Thread %d!\n", *(int *)i);
   while(1){
     fd = obtain(&pool);
@@ -49,13 +52,19 @@ void *thread_serve(void *i){
     pthread_cond_signal(&cond_nonfull);
     if(fd==-1)
       break;
-    get(fd, root_dir);    //serve the get request
+    bytes = get(fd, root_dir);    //serve the get request
+    //update shared data
+    pthread_mutex_lock(&p_mut);
+    if(bytes)
+      pages_served++;
+    bytes_served += bytes;
+    pthread_mutex_unlock(&p_mut);
     close(fd); //close socket
   }
   //pthread_exit(NULL);
 }
 
-int command(int sock, clock_t start, int pages, long bytes){
+int command(int sock, clock_t start){
   static char cmd[9];
   int i=0;
   while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!='\n') i++;
@@ -64,7 +73,7 @@ int command(int sock, clock_t start, int pages, long bytes){
   if(!strcmp(cmd, "STATS")){
     clock_t end = clock();
     float uptime = (float) (end - start) / CLOCKS_PER_SEC;
-    printf("Server up for %lf, served %d pages, %ld bytes\n", uptime, pages, bytes);
+    printf("Server up for %lf, served %d pages, %ld bytes\n", uptime, pages_served, bytes_served);
   }
   else if(!strcmp(cmd, "SHUTDOWN")){
     return 0;
@@ -82,16 +91,15 @@ void make_fds_array(int c_sock, int s_sock, struct pollfd *fds){
 }
 
 int server_operate(char *root_dir, int no_threads, int c_port, int s_port){
-  int c_sock, s_sock, newsock, pages=0;
+  int c_sock, s_sock, newsock;
   struct pollfd fds[2];
   pthread_t *threads = NULL;
-  long bytes = 0;
   clock_t start = clock();
   //create threads
   if((threads = malloc(no_threads*sizeof(pthread_t))) == NULL){
     perror("threads malloc:"); exit(-2); }
   initialize(&pool);
-  pthread_mutex_init(&mtx, 0);
+  pthread_mutex_init(&mtx, NULL);
   pthread_cond_init(&cond_nonempty, NULL);
   pthread_cond_init(&cond_nonfull, NULL);
   //create threads
@@ -105,7 +113,6 @@ int server_operate(char *root_dir, int no_threads, int c_port, int s_port){
   make_fds_array(c_sock, s_sock, fds); //make fds array to use in poll
 
   while(1){
-    printf("loop!\n");
     if(poll(fds, 2, -1) == -1){
         perror("Error in poll "); exit(-4); }
 
@@ -128,7 +135,7 @@ int server_operate(char *root_dir, int no_threads, int c_port, int s_port){
       if((newsock = accept(c_sock, NULL, NULL)) < 0){
         perror("accept"); exit(-4);}
       //execute command
-      if(!command(newsock, start, pages, bytes)){
+      if(!command(newsock, start)){
         //if command was SHUTDOWN, send message to threads
         for(int i=0; i<no_threads; i++){
           place(&pool, -1);
@@ -146,5 +153,6 @@ int server_operate(char *root_dir, int no_threads, int c_port, int s_port){
     if(pthread_join(threads[i], NULL)){
       perror("pthread_join"); exit(1);}
   }
+  pthread_mutex_destroy(&mtx);
   free(threads);
 }

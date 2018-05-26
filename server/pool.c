@@ -26,7 +26,7 @@ void place(pool_t *pool, int data){
   pool->end = (pool->end + 1) % POOL_SIZE;
   pool->data[pool->end] = data;
   pool->count ++;
-  pthread_mutex_unlock (&mtx);
+  pthread_mutex_unlock(&mtx);
 }
 
 int obtain(pool_t *pool){
