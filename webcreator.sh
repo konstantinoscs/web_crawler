@@ -52,6 +52,7 @@ fi
 ((f = p/2 + 1))
 ((q = w/2 +1))
 echo "f = $f q = $q"
+total_links=() # declare array that will keep the links
 
 #start creating pages
 for ((i=0; i<$w; i++)); do
@@ -66,7 +67,6 @@ for ((i=0; i<$w; i++)); do
       new_link=$RANDOM
     done
     links[$new_link]=1
-    #echo "Link is $new_link"
     #save links in temporary files
     echo site"$i"/page"$i"_"$new_link".html >> "$root_dir"/SITE$i
     unset links
@@ -77,26 +77,20 @@ done
 for ((i=0; i<$w; i++)); do
   echo "Creating website $i"
   readarray -t pages < "$root_dir"/SITE$i
-  #echo "printing all links"
-  #echo ${pages[*]}
+
   for ((j=0; j<$p; j++)); do
     file="$root_dir"/"${pages[$j]}"
     ((k=$RANDOM % ($lines -1998) +2 ))
     ((m=$RANDOM % 999 + 1001))
     #no of lines to write in each iteration
     ((range = m/(f+q)))
-    #remove self from links
+    #remove self from links --> break into two sub arrays
     links=("${pages[@]:0:$j}" "${pages[@]:(($j+1))}")
     #keep $f random links from same website
     links=($(printf "%s\n" "${links[@]}" | shuf | head -n $f))
     #take $q random links from other websites
-    links+=($(cat `find ./sites -not -name "SITE$w" | grep SITE*` | shuf |head -n $q))
-    #for l in ${links[@]}
-    #do :
-      #echo $l
-    #done
-    #echo "current page is ${pages[$j]}"
-    #echo "k is $k m is $m"
+    links+=($(cat `find "$root_dir" -not -name "SITE$w" | grep SITE*` | shuf |head -n $q))
+    total_links=("${total_links[@]}" "${links[@]}")
     echo "$file"
     echo "<!DOCTYPE  html>" > $file
     echo "<html>" >> $file
@@ -112,6 +106,11 @@ for ((i=0; i<$w; i++)); do
     echo '</html>' >> $file
   done
 done
+
+total_links=($(printf "%s\n" "${total_links[@]}" | sort -u));
+if [[ "${#total_links[@]}" -eq "$(($w * $p))" ]]; then
+  echo "All files have at least one incoming link!"
+fi
 #sed -n 5,8p file  --> print lines 5 to 8
 #$ foo=${string#$prefix}  --> to remove prefix
 #cat SITE[^0] | shuf |head -n 5 --> get random links not zero
