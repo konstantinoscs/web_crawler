@@ -8,7 +8,7 @@
 #include "utilities.h"
 
 int verify_get(char **request, int reqsize);
-int parse_get(int fd, char*** paths, int *pathsize);
+int parse_get(int fd, char ***paths, int *pathsize);
 void get_file_path(char *get_header, char *root_dir, char **path);
 int serve_request(int fd, char *file);
 int response_200_ok(int fd, FILE *fp);
