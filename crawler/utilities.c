@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int parse_arguments(int argc, char **argv, char **root_dir, int *no_threads,
+int parse_arguments(int argc, char **argv, char **save_dir, int *no_threads,
   int *c_port, int *s_port, char **host, char **start_url){
   int i=1;
   if(argc !=12 ){
@@ -11,7 +11,7 @@ int parse_arguments(int argc, char **argv, char **root_dir, int *no_threads,
   }
   while(i<argc){
     if(!strcmp(argv[i], "-d")){ //parse root_dir
-      *root_dir = argv[++i];
+      *save_dir = argv[++i];
     }
     else if(!strcmp(argv[i], "-t")){  //parse no of threads
       *no_threads = atoi(argv[++i]);
