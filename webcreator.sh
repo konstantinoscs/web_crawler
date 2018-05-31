@@ -63,7 +63,7 @@ for ((i=0; i<$w; i++)); do
     declare -A links
     #choose a random number as page number
     new_link=$RANDOM
-    while [ ${links[$new_link]+_} ]; do
+    while [ ${links[$new_link]+_} ]; do #rechoose links if they already exist
       new_link=$RANDOM
     done
     links[$new_link]=1
@@ -72,7 +72,7 @@ for ((i=0; i<$w; i++)); do
     unset links
   done
 done
-
+links=()
 #here we create actual pages
 for ((i=0; i<$w; i++)); do
   echo "Creating website $i"
@@ -88,10 +88,11 @@ for ((i=0; i<$w; i++)); do
     links=("${pages[@]:0:$j}" "${pages[@]:(($j+1))}")
     #keep $f random links from same website
     links=($(printf "%s\n" "${links[@]}" | shuf | head -n $f))
-    #take $q random links from other websites
-    links+=($(cat `find "$root_dir" -not -name "SITE$w" | grep SITE*` | shuf |head -n $q))
+    # pick q links from other websites
+    links+=($(cat `find "$root_dir" -not -name "SITE$i" | grep SITE*` | shuf |head -n $q))
+    # echo "exlinks" ${exlinks[@]}
     total_links=("${total_links[@]}" "${links[@]}")
-    echo "$file"
+    echo "Creating page: " "$file"
     echo "<!DOCTYPE  html>" > $file
     echo "<html>" >> $file
     echo "<body>">> $file
@@ -99,6 +100,7 @@ for ((i=0; i<$w; i++)); do
     for ((l=0; l<$f+$q; l++)); do
       ((end=k+range))
       sed -n "$k,$end p" $text_file >> $file
+      echo "Adding link: " ${links[$l]}
       echo "<br>  <a href='../${links[$l]}'>${links[$l]}</a><br>" >> $file
       ((k+=range))
     done
