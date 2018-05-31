@@ -2,3 +2,4 @@
 *.pdf
 sites/*
 server/myhttpd
+crawler/mycrawler
