@@ -141,7 +141,8 @@ int serve_request(int fd, char *file){
     //not 403 or 404 so send 500
     response_500_internal_server_error(fd);
   }
-  fclose(fp);
+  if(fp)
+    fclose(fp);
   //return if a page has been served to update stats;
   return serve;
 }

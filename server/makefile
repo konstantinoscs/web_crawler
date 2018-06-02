@@ -6,10 +6,10 @@ SOURCE = get.c pool.c servermain.c server.c utilities.c
 OBJ = $(SOURCE:.c=.o)
 
 %.o : %.c
-	$(CC) -c $<
+	$(CC) -c $< -g
 
 $(NAME): $(OBJ)
-	$(CC) $(FLAGS) -o $(NAME) $(OBJ) -lpthread
+	$(CC) $(FLAGS) -o $(NAME) $(OBJ) -g -lpthread
 
 $(OBJ): $(DEPS)
 
