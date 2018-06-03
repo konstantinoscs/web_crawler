@@ -4,7 +4,6 @@
 
 int parse_arguments(int argc, char **argv, char **save_dir, int *no_threads,
   int *c_port, int *s_port, char **host, char **start_url);
-int map_day(char*days, int dayd);
-int map_month(char*months, int monthd);
-int read_file(char **message, FILE *fp);
+char *extract_link(char *host, char*link);
+void free_2darray(char **array, int size);
 #endif

@@ -32,3 +32,20 @@ int parse_arguments(int argc, char **argv, char **save_dir, int *no_threads,
   }
   return 1;
 }
+
+//check if link contains host in front
+//and return pure link
+char *extract_link(char *host, char*link){
+  if(!strncmp(host, link, strlen(host)))
+    return link+strlen(host);
+  return link;
+}
+
+//simple util to free 2d array
+void free_2darray(char **array, int size){
+  if(!array)
+    return;
+  for(int i=0; i<size; i++)
+    if(array[i]) free(array);
+  free(array);
+}
