@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-int wget(char ***links, int *linksize, char *page){
-
+int wget(int sock, char *page, char *root_dir, int s_port, char ***links, int *linksize){
+  char *data = NULL;
 
 }

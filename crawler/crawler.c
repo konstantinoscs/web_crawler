@@ -43,7 +43,7 @@ int is_ip(char *host_or_ip){
 
 void *thread_crawl(void *info){
   ThreadInfo *t_info = (ThreadInfo *) info;
-  int sock;
+  int sock, linksize;
   char *site = NULL;
   char **links = NULL;
   if((sock = socket(AF_INET , SOCK_STREAM , 0)) < 0){
@@ -53,7 +53,7 @@ void *thread_crawl(void *info){
   while(1){
     site = obtain(&pool);
     printf("Got site: %s\n", site);
-    //wget()
+    //wget(sock, page, &links, &linksize);
     free(site);
   }
 }
@@ -86,6 +86,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   server.sin_port = htons(s_port);
   t_info.s_size = sizeof(server);
   t_info.serverptr = serverptr;
+  t_info.save_dir = save_dir;
 
   if((threads = malloc(no_threads*sizeof(pthread_t))) == NULL){
     perror("threads malloc:"); exit(-2); }

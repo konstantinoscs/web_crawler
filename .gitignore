@@ -1,5 +1,6 @@
 *.o
 *.pdf
+*.html
 sites/*
 server/myhttpd
 crawler/mycrawler
