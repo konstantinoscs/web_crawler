@@ -12,6 +12,7 @@
 
 #include "crawler.h"
 #include "pool.h"
+#include "wget.h"
 
 extern pthread_mutex_t mtx;
 extern pthread_cond_t cond_nonempty;
@@ -82,7 +83,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   }
 
   server.sin_family = AF_INET;
-  memcpy(&server.sin_addr, rem->h_addr, rem->h_length);
+  memcpy(&server.sin_addr, rem->h_addr_list[0], rem->h_length);
   server.sin_port = htons(s_port);
   t_info.s_size = sizeof(server);
   t_info.serverptr = serverptr;
@@ -102,7 +103,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   }
   //set the socket
   set_socket(c_port, &c_sock);
-  //set client part
+  //place first link at pool
 
 
   //start crawling
