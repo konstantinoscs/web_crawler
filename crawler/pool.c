@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+
 #include "pool.h"
 
 extern pthread_mutex_t mtx;
@@ -13,32 +14,29 @@ extern pthread_cond_t cond_nonfull;
 void initialize(pool_t *pool){
   pool->start = 0;
   pool->end = -1;
-  pool->count = 0;
-  //pool->data = malloc(30*sizeof(int));
+  pool->size = 10;
+  pool->data = malloc(10*sizeof(char*));
 }
 
-void place(pool_t *pool, int data){
+void place(pool_t *pool, char *data){
   pthread_mutex_lock(&mtx);
-  while(pool->count >= POOL_SIZE){
-    printf(">> Found  Buffer  Full \n");
-    pthread_cond_wait(&cond_nonfull, &mtx);
+  if(pool->end+1 == pool->size){
+    pool->data = realloc(pool->data, (pool->size+1)*sizeof(char*));
+    pool->size++;
   }
-  pool->end = (pool->end + 1) % POOL_SIZE;
+  pool->end = pool->end + 1;
   pool->data[pool->end] = data;
-  pool->count ++;
   pthread_mutex_unlock(&mtx);
 }
 
-int obtain(pool_t *pool){
-  int data = 0;
-  pthread_mutex_lock (&mtx);
-  while(pool->count <= 0) {
+char *obtain(pool_t *pool){
+  pthread_mutex_lock(&mtx);
+  while(pool->size <= 0) {
     printf(">> Found  Buffer  Empty \n");
     pthread_cond_wait(&cond_nonempty, &mtx);
   }
-  data = pool ->data[pool->start];
-  pool->start = (pool ->start + 1) % POOL_SIZE;
-  pool->count --;
-  pthread_mutex_unlock (&mtx);
+  char *data = pool->data[pool->end];
+  pool->end--;
+  pthread_mutex_unlock(&mtx);
   return data;
 }

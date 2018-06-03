@@ -1,8 +1,8 @@
 CC = gcc
 FLAGS = -Wall
-DEPS = crawler.h pool.h utilities.h
+DEPS = crawler.h pool.h utilities.h wget.h
 NAME = mycrawler
-SOURCE = crawler.c crawlermain.c pool.c utilities.c
+SOURCE = crawler.c crawlermain.c pool.c utilities.c wget.c
 OBJ = $(SOURCE:.c=.o)
 
 %.o : %.c

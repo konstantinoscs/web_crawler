@@ -2,10 +2,10 @@
 #define POOL_H
 
 typedef struct{
-  int data[30];
+  char **data;
   int start;
   int end;
-  int count;
+  int size;
 }pool_t;
 
 pthread_mutex_t mtx;
@@ -14,6 +14,6 @@ pthread_cond_t cond_nonfull;
 pool_t pool;
 
 void initialize(pool_t *pool);
-void place(pool_t *pool, int data);
-int obtain(pool_t *pool);
+void place(pool_t *pool, char *data);
+char *obtain(pool_t *pool);
 #endif

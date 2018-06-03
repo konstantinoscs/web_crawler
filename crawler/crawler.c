@@ -11,6 +11,12 @@
 #include <unistd.h>
 
 #include "crawler.h"
+#include "pool.h"
+
+extern pthread_mutex_t mtx;
+extern pthread_cond_t cond_nonempty;
+extern pthread_cond_t cond_nonfull;
+extern pool_t pool;
 
 int set_socket(int port, int *sock){
   //int sock;
@@ -37,7 +43,19 @@ int is_ip(char *host_or_ip){
 
 void *thread_crawl(void *info){
   ThreadInfo *t_info = (ThreadInfo *) info;
-  printf("sizeof(server): %d\n", t_info->s_size);
+  int sock;
+  char *site = NULL;
+  char **links = NULL;
+  if((sock = socket(AF_INET , SOCK_STREAM , 0)) < 0){
+    perror("Socket"); exit(-2);}
+  if(connect(sock, t_info->serverptr, t_info->s_size) < 0){
+    perror("Connect to server: "); exit(-2);}
+  while(1){
+    site = obtain(&pool);
+    printf("Got site: %s\n", site);
+    //wget()
+    free(site);
+  }
 }
 
 int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
@@ -71,6 +89,10 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
 
   if((threads = malloc(no_threads*sizeof(pthread_t))) == NULL){
     perror("threads malloc:"); exit(-2); }
+  initialize(&pool);
+  pthread_mutex_init(&mtx, NULL);
+  pthread_cond_init(&cond_nonempty, NULL);
+  pthread_cond_init(&cond_nonfull, NULL);
 
   //create threads
   for(int i=0; i<no_threads; i++){
