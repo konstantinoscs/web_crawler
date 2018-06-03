@@ -26,6 +26,7 @@ int get(int fd, char *root_dir){
 
   if(!parse_get(fd, &request, &reqsize) || !verify_get(request, reqsize)){
     fprintf(stderr,"Bad request!\n");
+    free_2darray(request, reqsize);
     return 0;
   }
   for(int i=0; i<reqsize; i++)
@@ -35,9 +36,7 @@ int get(int fd, char *root_dir){
 	get_file_path(request[0], root_dir, &path);
   //printf("GOT PATH %s\n", path);
 	served = serve_request(fd, path);
-  for(int i=0; i<reqsize; i++)
-    free(request[i]);
-  free(request);
+  free_2darray(request, reqsize);
   free(path);
   printf("bye request\n");
   return served;  //return no of bytes if a page has been served (stats)

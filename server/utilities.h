@@ -7,4 +7,5 @@ int parse_arguments(int argc, char ** argv, char** root_dir, int *no_threads,
 int map_day(char*days, int dayd);
 int map_month(char*months, int monthd);
 int read_file(char **message, FILE *fp);
+void free_2darray(char **array, int size);
 #endif

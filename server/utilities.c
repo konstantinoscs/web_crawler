@@ -67,3 +67,12 @@ int read_file(char **message, FILE *fp){
   *message = text;
   return 1;
 }
+
+//simple util to free 2d array
+void free_2darray(char **array, int size){
+  if(!array)
+    return;
+  for(int i=0; i<size; i++)
+    if(array[i]) free(array);
+  free(array);
+}
