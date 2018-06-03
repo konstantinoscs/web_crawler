@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 
 #include "pool.h"
@@ -25,7 +26,8 @@ void place(pool_t *pool, char *data){
     pool->size++;
   }
   pool->end = pool->end + 1;
-  pool->data[pool->end] = data;
+  pool->data[pool->end] = malloc(strlen(data)+1);
+  strcpy(pool->data[pool->end], data);
   pthread_mutex_unlock(&mtx);
 }
 

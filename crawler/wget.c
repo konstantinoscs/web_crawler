@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "utilities.h"
 
 //send_get sends a get request to sock for "page"
 void send_get(int sock, char *page, char *host, int s_port);
@@ -8,6 +11,8 @@ void send_get(int sock, char *page, char *host, int s_port);
 char *parse_response(int sock);
 //parse header reads the header of the response
 int parse_header(int fd, char*** paths, int *pathsize);
+//check_request checks if request is ok and saves the content length
+int check_request(char **header, int headsize, int *len);
 
 //wget downloads a page
 int wget(int sock, char *page, char *root_dir, char *host, int s_port,
@@ -30,18 +35,22 @@ char *parse_response(int sock){
   char *data = NULL;
   char **header;
   int headsize = 0;
-  int chunk = 120, nread = 0;
+  int chunk = 120, nread = 0, len = 0;
   static char buf[120], ch;
   memset(buf, 0, sizeof(buf));
-  parse_header(sock, &header, &headsize);
-  
+  if(!parse_header(sock, &header, &headsize) || !check_request(header, headsize, &len)){
+    free_2darray(header, headsize);
+    return NULL;
+  }
+
+    
 }
 
 int parse_header(int fd, char*** paths, int *pathsize){
   int docm = 8, docc=0; //arbitary start from 8 words
   int wordm = 2, wordc=0; //start from a word with 2 characters
   char ch;
-  //FILE * docf = fopen(doc, "r");
+  //FILE * docf = fopen(doc, "r"); -->legacy from file parsing
   *pathsize = 0;
 
   *paths = malloc(docm*sizeof(char*));
@@ -85,5 +94,19 @@ int parse_header(int fd, char*** paths, int *pathsize){
     wordc = 0;
   }
   *paths = realloc(*paths, (*pathsize)*sizeof(char*)); //shrink to fit
+  return 1;
+}
+
+int check_request(char **header, int headsize, int *len){
+  if(strlen(header[0]) < 16 || strncmp(header[0], "HTTP/1.1 200 OK", 16))
+    return 0;
+  
+  for(int i=0; i<headsize; i++){
+    //check for Content-Length:
+    if(strlen(header[i]) >16 && !strncmp(header[i], "Content-Length: ", 16)){
+      *len = atoi(header[i]+16);
+       break;
+    }
+  }
   return 1;
 }

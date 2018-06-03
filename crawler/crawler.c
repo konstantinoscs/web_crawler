@@ -12,12 +12,17 @@
 
 #include "crawler.h"
 #include "pool.h"
+#include "utilities.h"
 #include "wget.h"
 
 extern pthread_mutex_t mtx;
 extern pthread_cond_t cond_nonempty;
 extern pthread_cond_t cond_nonfull;
 extern pool_t pool;
+int pages_down = 0;
+unsigned long bytes_down = 0;
+
+int command(int sock, clock_t start);
 
 int set_socket(int port, int *sock){
   //int sock;
@@ -63,7 +68,9 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   int s_port, int no_threads){
 
   int c_sock, s_sock, newsock;
+  char *start_link = NULL;
   pthread_t *threads = NULL;
+  clock_t start = clock();
   //client variables
   struct sockaddr_in server;
   struct sockaddr *serverptr = (struct sockaddr *)&server;
@@ -104,7 +111,8 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   //set the socket
   set_socket(c_port, &c_sock);
   //place first link at pool
-
+  start_link = extract_link(host, start_url);
+  place(&pool, start_link);
 
   //start crawling
 
@@ -112,4 +120,24 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
     if(pthread_join(threads[i], NULL)){
       perror("pthread_join"); exit(1);}
   free(threads);
+}
+
+int command(int sock, clock_t start){
+  static char cmd[9];
+  int i=0;
+  while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!='\n') i++;
+  cmd[i] = '\0';
+  printf("Command: %s\n", cmd);
+  if(!strcmp(cmd, "STATS")){
+    clock_t end = clock();
+    float uptime = (float) (end - start) / CLOCKS_PER_SEC;
+    printf("Crawler up for %lf, downloaded %d pages, %ld bytes\n", uptime, pages_down, bytes_down);
+  }
+  else if(!strcmp(cmd, "SHUTDOWN")){
+    return 0;
+  }
+  else{
+    printf("Unknown command!\n");
+  }
+  return 1;
 }
