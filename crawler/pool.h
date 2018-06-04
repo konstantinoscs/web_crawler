@@ -17,6 +17,7 @@ typedef struct{
 pthread_mutex_t mtx;
 pthread_cond_t cond_nonempty;
 pthread_cond_t cond_nonfull;
+int stuck;
 pool_t pool;
 
 void initialize(pool_t *pool);

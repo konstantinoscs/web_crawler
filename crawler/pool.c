@@ -9,6 +9,7 @@
 extern pthread_mutex_t mtx;
 extern pthread_cond_t cond_nonempty;
 extern pthread_cond_t cond_nonfull;
+extern int stuck;
 
 #define POOL_SIZE 30
 
@@ -37,10 +38,12 @@ void place(pool_t *pool, char *data){
 
 char *obtain(pool_t *pool){
   pthread_mutex_lock(&mtx);
+  stuck++;
   while(pool->end < 0) {
     printf(">> Found  Buffer  Empty \n");
     pthread_cond_wait(&cond_nonempty, &mtx);
   }
+  stuck--;
   char *data = pool->data[pool->end];
   pool->end--;
   pthread_mutex_unlock(&mtx);

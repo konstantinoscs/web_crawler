@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +42,11 @@ int parse_arguments(int argc, char **argv, char **save_dir, int *no_threads,
     i++;  //move to the next arg one incremation has already been done
   }
   return 1;
+}
+
+//check if an string is ip or domain name
+int is_ip(char *host_or_ip){
+  return isdigit(host_or_ip[strlen(host_or_ip)]);
 }
 
 //check if link contains host in front

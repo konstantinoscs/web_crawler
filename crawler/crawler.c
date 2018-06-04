@@ -1,5 +1,4 @@
 #include <arpa/inet.h>
-#include <ctype.h>
 #include <pthread.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -20,6 +19,7 @@ extern pthread_cond_t cond_nonempty;
 extern pthread_cond_t cond_nonfull;
 extern pool_t pool;
 extern link_set set;
+extern int stuck;
 pthread_mutex_t p_mut = PTHREAD_MUTEX_INITIALIZER;
 int pages_down = 0;
 unsigned long bytes_down = 0;
@@ -43,10 +43,6 @@ int set_socket(int port, int *sock){
     perror("listen"); exit(-1); }
 
   return 1;
-}
-
-int is_ip(char *host_or_ip){
-  return isdigit(host_or_ip[strlen(host_or_ip)]);
 }
 
 void *thread_crawl(void *info){
@@ -120,6 +116,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
     perror("threads malloc:"); exit(-2); }
   initialize(&pool);
   initialize_set(&set);
+  stuck = 0;
   pthread_mutex_init(&mtx, NULL);
   pthread_cond_init(&cond_nonempty, NULL);
   pthread_cond_init(&cond_nonfull, NULL);

@@ -14,4 +14,5 @@ void free_2darray(char **array, int size);
 int check_dir(char *mixed_path);
 void parse_links(char *data, char ***links, int *linksize);
 void insert_links(char **links, int linksize);
+int is_ip(char *host_or_ip);
 #endif
