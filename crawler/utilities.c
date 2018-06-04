@@ -85,11 +85,13 @@ void parse_links(char *data, char ***links, int *linksize){
   static char *href = "<a href='";
   int sz;
   *linksize = 0;
+  *links = malloc(0);
   temp = strstr(data, href);
   while(temp){
     *links = realloc(*links, ((*linksize)+1)*sizeof(char*));
     sz = 0;
     temp +=9;
+    while(*temp !='/') temp++;
     while(temp[sz]!='\'') sz++;
     (*links)[*linksize] = malloc(sz+1);
     strncpy( (*links)[*linksize], temp, sz);
@@ -102,5 +104,12 @@ void parse_links(char *data, char ***links, int *linksize){
 void insert_links(char **links, int linksize){
   for(int i=0; i<linksize; i++){
     printf("%s\n", links[i]);
+    pthread_mutex_lock(&l_mut);
+      if(!unsafe_search(&set, links[i])){
+        unsafe_place(&set, links[i]);
+        place(&pool, links[i]);
+        pthread_cond_signal(&cond_nonempty);
+      }
+    pthread_mutex_unlock(&l_mut);
   }
 }

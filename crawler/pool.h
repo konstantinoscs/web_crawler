@@ -10,6 +10,7 @@ typedef struct{
 
 typedef struct{
   char **strings;
+  int cap;  //capacity
   int size;
 }link_set;
 
@@ -21,4 +22,10 @@ pool_t pool;
 void initialize(pool_t *pool);
 void place(pool_t *pool, char *data);
 char *obtain(pool_t *pool);
+
+void initialize_set(link_set *set);
+void unsafe_place(link_set *set, char *data);
+//test if data is in set
+int unsafe_search(link_set *set, char *data);
+void delete_set(link_set *set);
 #endif

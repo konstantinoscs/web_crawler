@@ -19,6 +19,8 @@ extern pthread_mutex_t mtx;
 extern pthread_cond_t cond_nonempty;
 extern pthread_cond_t cond_nonfull;
 extern pool_t pool;
+extern link_set set;
+pthread_mutex_t p_mut = PTHREAD_MUTEX_INITIALIZER;
 int pages_down = 0;
 unsigned long bytes_down = 0;
 
@@ -51,21 +53,31 @@ void *thread_crawl(void *info){
   ThreadInfo *t_info = (ThreadInfo *) info;
   int sock, linksize;
   char *site = NULL, **links = NULL, *data = NULL;
-  if((sock = socket(AF_INET , SOCK_STREAM , 0)) < 0){
-    perror("Socket"); exit(-2);}
-  if(connect(sock, t_info->serverptr, t_info->s_size) < 0){
-    perror("Connect to server: "); exit(-2);}
+  
   while(1){
     site = obtain(&pool);
     printf("Got site: %s\n", site);
-    if(site[0] == '\0') break;
+    if(!site) break;
+    if((sock = socket(AF_INET , SOCK_STREAM , 0)) < 0){
+    perror("Socket"); exit(-2);}
+    if(connect(sock, t_info->serverptr, t_info->s_size) < 0){
+      perror("Connect to server: "); exit(-2);}
+
     if(wget(sock, site, t_info->save_dir, t_info->host, t_info->s_port, &data)){
+      //update stats
+      pthread_mutex_lock(&p_mut);
+        pages_down++;
+        bytes_down += strlen(data);
+      pthread_mutex_unlock(&p_mut);
       parse_links(data, &links, &linksize);
       printf("parsed links %d\n", linksize);
+      //insert new links at pool
       insert_links(links, linksize);
+      free_2darray(links, linksize);
     }
     free(site);
     if(data) free(data);
+    close(sock);
   }
   if(site) free(site);
 }
@@ -107,6 +119,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   if((threads = malloc(no_threads*sizeof(pthread_t))) == NULL){
     perror("threads malloc:"); exit(-2); }
   initialize(&pool);
+  initialize_set(&set);
   pthread_mutex_init(&mtx, NULL);
   pthread_cond_init(&cond_nonempty, NULL);
   pthread_cond_init(&cond_nonfull, NULL);
@@ -121,14 +134,32 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   //place first link at pool
   start_link = extract_link(host, start_url);
   printf("start link:%s\n", start_link);
-  place(&pool, start_link);
-  pthread_cond_signal(&cond_nonempty);
+  insert_links(&start_link, 1);
+  //place(&pool, start_link);
+  //pthread_cond_signal(&cond_nonempty);
   printf("Just waiting!\n");
   //start crawling
+
+  printf("command ready\n");
+  while(1){
+    if((newsock = accept(c_sock, NULL, NULL)) < 0){
+      perror("accept"); exit(-4);}
+    //execute command
+    if(!command(newsock, start)){
+    //if command was SHUTDOWN, send message to threads
+      for(int i=0; i<no_threads; i++){
+        place(&pool, NULL);
+        pthread_cond_signal(&cond_nonempty);
+      }
+      break;
+    }
+    close(newsock);
+  }
 
   for(int i=0; i<no_threads; i++)
     if(pthread_join(threads[i], NULL)){
       perror("pthread_join"); exit(1);}
+  delete_set(&set);
   free(pool.data);
   free(threads);
 }

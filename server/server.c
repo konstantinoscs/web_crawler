@@ -143,6 +143,7 @@ int server_operate(char *root_dir, int no_threads, int c_port, int s_port){
         }
         break;
       }
+      close(newsock);
     }
     else if(fds[1].revents == POLLHUP){
 
