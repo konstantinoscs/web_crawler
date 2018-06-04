@@ -11,7 +11,7 @@
 #include "utilities.h"
 #include "worker.h"
 
-int main(int argc, char **argv){
+int searchmain(int argc, char **argv){
   char *docfile = NULL, **job_to_w=NULL, **w_to_job = NULL;
   int num_workers = 0;
   pid_t *child = NULL;
