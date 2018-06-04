@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +7,10 @@
 #include <unistd.h>
 
 #include "pool.h"
+extern pool_t pool;
+//link set for
+link_set set;
+pthread_mutex_t l_mut = PTHREAD_MUTEX_INITIALIZER;
 
 int parse_arguments(int argc, char **argv, char **save_dir, int *no_threads,
   int *c_port, int *s_port, char **host, char **start_url){
@@ -86,7 +91,6 @@ void parse_links(char *data, char ***links, int *linksize){
     sz = 0;
     temp +=9;
     while(temp[sz]!='\'') sz++;
-    printf("sz %d\n", sz);
     (*links)[*linksize] = malloc(sz+1);
     strncpy( (*links)[*linksize], temp, sz);
     (*links)[*linksize][sz] = '\0';

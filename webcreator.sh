@@ -90,7 +90,7 @@ for ((i=0; i<$w; i++)); do
     links=($(printf "%s\n" "${links[@]}" | shuf | head -n $f))
     # pick q links from other websites
     links+=($(cat `find "$root_dir" -not -name "SITE$i" | grep SITE*` | shuf |head -n $q))
-    # echo "exlinks" ${exlinks[@]}
+    #echo "links" ${links[@]}
     total_links=("${total_links[@]}" "${links[@]}")
     echo "Creating page: " "$file"
     echo "<!DOCTYPE  html>" > $file
