@@ -12,4 +12,6 @@ char *extract_link(char *host, char*link);
 void free_2darray(char **array, int size);
 //checks if a directory exists and if not, creates it
 int check_dir(char *mixed_path);
+void parse_links(char *data, char ***links, int *linksize);
+void insert_links(char **links, int linksize);
 #endif

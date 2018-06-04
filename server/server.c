@@ -48,7 +48,7 @@ void *thread_serve(void *i){
   //printf("Thread %d!\n", *(int *)i);
   while(1){
     fd = obtain(&pool);
-    printf("Got fd:%d\n", fd);
+    //printf("Got fd:%d\n", fd);
     pthread_cond_signal(&cond_nonfull);
     if(fd==-1)
       break;

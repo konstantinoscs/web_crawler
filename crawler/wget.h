@@ -3,6 +3,6 @@
 
 #include "crawler.h"
 
-int wget(int sock, char *page, char *save_dir, char *host, int s_port);
+int wget(int sock, char *page, char *save_dir, char *host, int s_port, char **down);
 
 #endif

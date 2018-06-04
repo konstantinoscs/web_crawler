@@ -17,8 +17,8 @@ int check_request(char **header, int headsize, int *len);
 //save to dir
 void save_to_dir(char *save_dir, char *page, char* data);
 
-//wget downloads a page and returns the links found in it
-int wget(int sock, char *page, char *save_dir, char *host, int s_port){
+//wget downloads a page and returns it as a raw string
+int wget(int sock, char *page, char *save_dir, char *host, int s_port, char **down){
 
   char *data = NULL;
   //get request here
@@ -27,12 +27,16 @@ int wget(int sock, char *page, char *save_dir, char *host, int s_port){
   printf("Will try to get data\n");
   if(!(data = parse_response(sock))){
     fprintf(stderr, "Couldn't download file :(...\n");
+    if(down) *down = NULL;
     return 0;
   }
   //printf("Got data:\n %s\n", data);
   //save data to actual file
   save_to_dir(save_dir, page, data);
-  free(data);
+  if(down) 
+    *down = data;
+  else 
+    free(data);
   return 1;
 }
 

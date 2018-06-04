@@ -8,6 +8,11 @@ typedef struct{
   int size;
 }pool_t;
 
+typedef struct{
+  char **strings;
+  int size;
+}str_set;
+
 pthread_mutex_t mtx;
 pthread_cond_t cond_nonempty;
 pthread_cond_t cond_nonfull;

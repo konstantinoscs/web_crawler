@@ -50,8 +50,7 @@ int is_ip(char *host_or_ip){
 void *thread_crawl(void *info){
   ThreadInfo *t_info = (ThreadInfo *) info;
   int sock, linksize;
-  char *site = NULL;
-  char **links = NULL;
+  char *site = NULL, **links = NULL, *data = NULL;
   if((sock = socket(AF_INET , SOCK_STREAM , 0)) < 0){
     perror("Socket"); exit(-2);}
   if(connect(sock, t_info->serverptr, t_info->s_size) < 0){
@@ -59,9 +58,14 @@ void *thread_crawl(void *info){
   while(1){
     site = obtain(&pool);
     printf("Got site: %s\n", site);
-    if(!strcmp(site, "")) break;
-    wget(sock, site, t_info->save_dir, t_info->host, t_info->s_port);
+    if(site[0] == '\0') break;
+    if(wget(sock, site, t_info->save_dir, t_info->host, t_info->s_port, &data)){
+      parse_links(data, &links, &linksize);
+      printf("parsed links %d\n", linksize);
+      insert_links(links, linksize);
+    }
     free(site);
+    if(data) free(data);
   }
   if(site) free(site);
 }

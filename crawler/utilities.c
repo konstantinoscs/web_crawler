@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "pool.h"
+
 int parse_arguments(int argc, char **argv, char **save_dir, int *no_threads,
   int *c_port, int *s_port, char **host, char **start_url){
   int i=1;
@@ -71,4 +73,30 @@ int check_dir(char *mixed_path){
     mkdir(folder, 0700); 
   free(folder);
   return 1;
+}
+
+void parse_links(char *data, char ***links, int *linksize){
+  char *temp = NULL;
+  static char *href = "<a href='";
+  int sz;
+  *linksize = 0;
+  temp = strstr(data, href);
+  while(temp){
+    *links = realloc(*links, ((*linksize)+1)*sizeof(char*));
+    sz = 0;
+    temp +=9;
+    while(temp[sz]!='\'') sz++;
+    printf("sz %d\n", sz);
+    (*links)[*linksize] = malloc(sz+1);
+    strncpy( (*links)[*linksize], temp, sz);
+    (*links)[*linksize][sz] = '\0';
+    (*linksize)++;
+    temp = strstr(temp, href);
+  }
+}
+
+void insert_links(char **links, int linksize){
+  for(int i=0; i<linksize; i++){
+    printf("%s\n", links[i]);
+  }
 }
