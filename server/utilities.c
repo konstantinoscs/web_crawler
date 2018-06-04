@@ -73,6 +73,6 @@ void free_2darray(char **array, int size){
   if(!array)
     return;
   for(int i=0; i<size; i++)
-    if(array[i]) free(array);
+    if(array[i]) free(array[i]);
   free(array);
 }
