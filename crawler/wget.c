@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "utilities.h"
@@ -13,21 +14,37 @@ char *parse_response(int sock);
 int parse_header(int fd, char*** paths, int *pathsize);
 //check_request checks if request is ok and saves the content length
 int check_request(char **header, int headsize, int *len);
+//save to dir
+void save_to_dir(char *save_dir, char *page, char* data);
 
-//wget downloads a page
-int wget(int sock, char *page, char *root_dir, char *host, int s_port,
-  char ***links, int *linksize){
+//wget downloads a page and returns the links found in it
+int wget(int sock, char *page, char *save_dir, char *host, int s_port){
 
   char *data = NULL;
   //get request here
   send_get(sock, page, host, s_port);
+  //save page text to pointer
+  printf("Will try to get data\n");
+  if(!(data = parse_response(sock))){
+    fprintf(stderr, "Couldn't download file :(...\n");
+    return 0;
+  }
+  //printf("Got data:\n %s\n", data);
+  //save data to actual file
+  save_to_dir(save_dir, page, data);
+  free(data);
+  return 1;
 }
 
 void send_get(int sock, char *page, char *host, int s_port){
+  static char port[6] = "00000";
+  sprintf(port, "%d", s_port);
   write(sock, "GET " ,4);
   write(sock, page, strlen(page));
-  write(sock, "HTTP/1.1\r\nHost: ", 16);
+  write(sock, " HTTP/1.1\r\nHost: ", 17);
   write(sock, host, strlen(host));
+  write(sock, ":", 1);
+  write(sock, port, strlen(port));
   write(sock, "\r\nConnection: close\r\n\r\n", 23);
 }
 
@@ -35,15 +52,26 @@ char *parse_response(int sock){
   char *data = NULL;
   char **header;
   int headsize = 0;
-  int chunk = 120, nread = 0, len = 0;
-  static char buf[120], ch;
-  memset(buf, 0, sizeof(buf));
+  int offset=0, nread = 0, len = 0;
+  int chunk = 120, left = 0;
+  char ch;
   if(!parse_header(sock, &header, &headsize) || !check_request(header, headsize, &len)){
-    free_2darray(header, headsize);
+    //free_2darray(header, headsize);
     return NULL;
   }
-
-    
+  printf("Len is %d\n", len);
+  left = len;
+  data = malloc(len+1);
+  while(left){
+    if(left <= chunk)
+      chunk = left;
+    nread = read(sock, data+offset, chunk);
+    left -= nread;
+    offset += nread;
+  }
+  data[len] = '\0';
+  free_2darray(header, headsize);
+  return data;
 }
 
 int parse_header(int fd, char*** paths, int *pathsize){
@@ -94,19 +122,45 @@ int parse_header(int fd, char*** paths, int *pathsize){
     wordc = 0;
   }
   *paths = realloc(*paths, (*pathsize)*sizeof(char*)); //shrink to fit
+  printf("Bb parse header\n");
   return 1;
 }
 
 int check_request(char **header, int headsize, int *len){
-  if(strlen(header[0]) < 16 || strncmp(header[0], "HTTP/1.1 200 OK", 16))
+  printf("Trying first check\n");
+  printf("%s\n%ld\n", header[0], strlen(header[0]));
+  printf("%d\n", strncmp(header[0], "HTTP/1.1 200 OK", 15));
+  if(strlen(header[0]) < 15 || strncmp(header[0], "HTTP/1.1 200 OK", 15))
     return 0;
-  
+  printf("First check ok\n");
   for(int i=0; i<headsize; i++){
     //check for Content-Length:
     if(strlen(header[i]) >16 && !strncmp(header[i], "Content-Length: ", 16)){
       *len = atoi(header[i]+16);
-       break;
+      printf("Second check ok\n");
+      break; 
     }
   }
   return 1;
+}
+
+void save_to_dir(char *save_dir, char *page, char* data){
+  char *path = NULL;
+  FILE *fp;
+  //check if save dir is "folder" or "folder/"
+  printf("%c\n", save_dir[strlen(save_dir)-1]);
+  if(save_dir[strlen(save_dir)-1] == '/'){
+    path = malloc(strlen(save_dir)+ strlen(page));
+    sprintf(path, "%s%s", save_dir, page+1);
+  }
+  else{
+    path = malloc(strlen(save_dir)+ strlen(page)+1);
+    sprintf(path, "%s%s", save_dir, page);
+  }
+  printf("path is: %s\n", path);
+  check_dir(path);
+  fp = fopen(path, "w");
+  fprintf(fp, "%s", data);
+  fclose(fp);
+  free(path);
 }

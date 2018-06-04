@@ -59,9 +59,11 @@ void *thread_crawl(void *info){
   while(1){
     site = obtain(&pool);
     printf("Got site: %s\n", site);
-    //wget(sock, page, &links, &linksize);
+    if(!strcmp(site, "")) break;
+    wget(sock, site, t_info->save_dir, t_info->host, t_info->s_port);
     free(site);
   }
+  if(site) free(site);
 }
 
 int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
@@ -95,6 +97,8 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   t_info.s_size = sizeof(server);
   t_info.serverptr = serverptr;
   t_info.save_dir = save_dir;
+  t_info.host = host;
+  t_info.s_port = s_port;
 
   if((threads = malloc(no_threads*sizeof(pthread_t))) == NULL){
     perror("threads malloc:"); exit(-2); }
@@ -112,13 +116,16 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   set_socket(c_port, &c_sock);
   //place first link at pool
   start_link = extract_link(host, start_url);
+  printf("start link:%s\n", start_link);
   place(&pool, start_link);
-
+  pthread_cond_signal(&cond_nonempty);
+  printf("Just waiting!\n");
   //start crawling
 
   for(int i=0; i<no_threads; i++)
     if(pthread_join(threads[i], NULL)){
       perror("pthread_join"); exit(1);}
+  free(pool.data);
   free(threads);
 }
 

@@ -25,7 +25,7 @@ void place(pool_t *pool, char *data){
     pool->data = realloc(pool->data, (pool->size+1)*sizeof(char*));
     pool->size++;
   }
-  pool->end = pool->end + 1;
+  pool->end++;
   pool->data[pool->end] = malloc(strlen(data)+1);
   strcpy(pool->data[pool->end], data);
   pthread_mutex_unlock(&mtx);
@@ -33,7 +33,7 @@ void place(pool_t *pool, char *data){
 
 char *obtain(pool_t *pool){
   pthread_mutex_lock(&mtx);
-  while(pool->size <= 0) {
+  while(pool->end < 0) {
     printf(">> Found  Buffer  Empty \n");
     pthread_cond_wait(&cond_nonempty, &mtx);
   }

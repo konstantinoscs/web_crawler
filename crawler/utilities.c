@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 int parse_arguments(int argc, char **argv, char **save_dir, int *no_threads,
   int *c_port, int *s_port, char **host, char **start_url){
@@ -46,6 +49,26 @@ void free_2darray(char **array, int size){
   if(!array)
     return;
   for(int i=0; i<size; i++)
-    if(array[i]) free(array);
+    if(array[i]) free(array[i]);
   free(array);
+}
+
+//checks if a directory exists and if not, creates it
+int check_dir(char *mixed_path){
+  static struct stat st = {0};
+  char *folder = NULL;
+  int i;
+  for(i=strlen(mixed_path)-1; i>=0; i--)
+    if(mixed_path[i] == '/')
+      break;
+  if(!i) return 0;
+  printf("mixed path: %s, i :%d\n", mixed_path, i);
+  folder = malloc(i+1);
+  strncpy(folder, mixed_path, i);
+  folder[i] = '\0';
+  printf("folder: %s\n", folder);
+  if (stat(folder, &st) == -1)
+    mkdir(folder, 0700); 
+  free(folder);
+  return 1;
 }

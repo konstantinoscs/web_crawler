@@ -8,6 +8,7 @@ typedef struct ThreadInfo{
   int s_size;     //server size
   struct sockaddr *serverptr;
   char *save_dir;   //directory to save crawled pages
+  char *host;
   int s_port;     //service port of server
 }ThreadInfo;
 
