@@ -128,11 +128,12 @@ void write_dirs(char *docname, char*save_dir){
   struct dirent *ent;
   if ((dir = opendir(save_dir)) != NULL) {
       /* print all the files and directories within directory */
-      while ((ent = readdir (dir)) != NULL) {
-        if(ent->d_type != DT_DIR)
+      while ((ent = readdir(dir)) != NULL) {
+        if(ent->d_type != DT_DIR || !strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
           continue;
         //initialize new registry
-        fprintf(fp, "%s\n", ent->d_name);
+        printf("%s\n", ent->d_name);
+        fprintf(fp, "%s%s\n", save_dir, ent->d_name);
       }
   }
 }

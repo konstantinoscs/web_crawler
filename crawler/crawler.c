@@ -165,7 +165,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
 int command(int sock, clock_t start, char *save_dir){
   static char cmd[9];
   int i=0;
-  while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!='\n') i++;
+  while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!=' ' && cmd[i]!='\n') i++;
   cmd[i] = '\0';
   printf("Command: %s\n", cmd);
   if(!strcmp(cmd, "STATS")){
@@ -177,8 +177,8 @@ int command(int sock, clock_t start, char *save_dir){
     return 0;
   }
   else if(!strcmp(cmd, "SEARCH")){
-    write_dirs("./doc", save_dir);
-    char *argv[] = { "./JobExecutor", "-d", "./doc", "-w", "4"};
+    //write_dirs("./doc", save_dir);
+    char *argv[] = { "./JobExecutor", "-d", "./doc", "-w", "1"};
     int arc = 5;
     searchmain(arc, argv, sock);
   }

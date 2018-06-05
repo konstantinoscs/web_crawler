@@ -23,7 +23,7 @@ int s_parse_arguments(int argc, char **argv, char **docfile, int *num_workers){
     }
     i++;  //move to the next arg one incremation has already been done
   }
-  printf("w is %d\n", *num_workers);
+  printf("docfile is %s\n", *docfile);
   return 1;
 }
 
@@ -33,7 +33,7 @@ int parse_docfile(char* doc, char*** paths, int *pathsize){
   int docm = 8, docc=0; //arbitary start from 8 words
   int wordm = 2, wordc=0; //start from a word with 2 characters
   int ch;
-  FILE * docf = fopen(doc, "r");
+  FILE *docf = fopen(doc, "r");
   *pathsize = 0;
 
   *paths = malloc(docm*sizeof(char*));
@@ -64,6 +64,7 @@ int parse_docfile(char* doc, char*** paths, int *pathsize){
 
     (*paths)[docc][wordc] = '\0';
     (*paths)[docc] = realloc((*paths)[docc], wordc+1); //shrink to fit
+    //printf("Read: %s\n", (*paths)[docc]);
     *pathsize = ++docc;    //necessary update in case of emergency
     wordm = 2;  //re-initialize for next document
     wordc = 0;

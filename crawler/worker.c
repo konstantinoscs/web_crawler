@@ -110,9 +110,9 @@ int worker_operate(char *job_to_w, char *w_to_job){
   //here load everything to memory - trie
   for(int i=0; i<pathsize; i++){
     //printf("Testing path:%s\n", paths[i]);
-    if ((dir = opendir (paths[i])) != NULL) {
+    if ((dir = opendir(paths[i])) != NULL) {
       /* print all the files and directories within directory */
-      while ((ent = readdir (dir)) != NULL) {
+      while ((ent = readdir(dir)) != NULL) {
         if(ent->d_type != DT_REG)
           continue;
         if(docc == docm){
