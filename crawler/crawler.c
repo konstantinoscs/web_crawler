@@ -181,7 +181,7 @@ int command(int sock, clock_t start, char *save_dir, int c_sock, int no_threads)
       return 0;
     }
     pthread_mutex_unlock(&mtx);
-    //write_dirs("./doc", save_dir);
+    write_dirs("./doc", save_dir);
     char *argv[] = { "./JobExecutor", "-d", "./doc", "-w", "1"};
     int arc = 5;
     searchmain(arc, argv, sock, c_sock);
