@@ -4,9 +4,10 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 
-int s_parse_arguments(int argc, char ** argv, char** docfile, int *num_workers){
+int s_parse_arguments(int argc, char **argv, char **docfile, int *num_workers){
   int i=1;
   if(argc !=5 ){
     fprintf(stderr, "Wrong number of arguments given\n");
@@ -86,44 +87,36 @@ int make_fifo_arrays(char ***job_to_w, char***w_to_job, int num_workers){
   for(int i=0; i<num_workers; i++){
     if (mkfifo((*job_to_w)[i], 0666) == -1 ) {
       if (errno != EEXIST ) {
-        perror ( " receiver : mkfifo " ) ;
-        exit (6) ;
+        perror(" receiver : mkfifo " );
+        exit(6);
       }
     }
     if (mkfifo((*w_to_job)[i], 0666) == -1 ) {
       if (errno != EEXIST ) {
-        perror ( "receiver : mkfifo " ) ;
-        exit (6) ;
+        perror("receiver : mkfifo " );
+        exit(6);
       }
     }
   }
 }
 
-int readQueries(char ***queries, int *queriesNo){
+int readQueries(char ***queries, int *queriesNo, int sock){
   int ch = ' ';
   int wordm=0, wordc=0;   //current query memory and query counter
   int queriesc = 0;
-
-  if((ch =getchar()) == '\n')
-    return 0;
-  else
-    ungetc(ch, stdin);
 
   *queriesNo = 2;
   *queries = malloc((*queriesNo)*sizeof(char*));
   while(ch!='\n'){
     wordm = 2;    //start from 1 character (plus '\0')
     wordc = 0;
-    if(queriesc == 12){
-      while((ch=getchar()) !='\n') continue;
-      break;
-    }
     if(queriesc == *queriesNo){
       (*queriesNo) *=2;
       *queries = realloc(*queries, (*queriesNo)*sizeof(char*));
     }
     (*queries)[queriesc] = malloc(wordm);
-    while((ch=getchar())!= ' ' && ch!='\n'){
+    read(sock, &ch, 1);
+    while(ch!= ' ' && ch!='\r'){
       if(wordc+1 == wordm){     //chech if reallocation needed
         wordm *= 2;
         (*queries)[queriesc] = realloc((*queries)[queriesc], wordm);
@@ -134,6 +127,7 @@ int readQueries(char ***queries, int *queriesNo){
     (*queries)[queriesc] = realloc((*queries)[queriesc], wordc+1); //shrink tf
     queriesc++;
   }
+  read(sock, &ch, 1);
   *queries = realloc(*queries, queriesc*sizeof(char*));
   *queriesNo = queriesc;
   return 1;

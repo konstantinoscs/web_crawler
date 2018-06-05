@@ -154,7 +154,7 @@ void child_spawn(pid_t *child, int num_workers, int total_pathsize, char** paths
   }
 }
 
-void print_search_results(int fin, char **queries, int queriesNo){
+void print_search_results(int fin, char **queries, int queriesNo, int sock){
   int nread, results_no, qlen, size, line_no;
   char *doc = malloc(1), *line = malloc(1);
   for(int i=0; i<queriesNo; i++){
@@ -176,6 +176,8 @@ void print_search_results(int fin, char **queries, int queriesNo){
         exit(5);
       }
       printf("Document %s\n", doc);
+      write(sock, doc, qlen);
+      write(sock, "\r\n", 2);
       if((nread = read(fin, &size, sizeof(int))) < 0){
         perror("problem in reading ");
         exit(5);
@@ -197,6 +199,9 @@ void print_search_results(int fin, char **queries, int queriesNo){
           perror("problem in reading ");
           exit(5);
         }
+        if(qlen > 50) qlen = 50;
+        write(sock, line, qlen);
+        write(sock, "\r\n", 2);
         printf("%.50s\n", line);
       }
     }
@@ -299,7 +304,7 @@ void parent_mincount(int queriesNo, int num_workers, int *fifo_in, int *fifo_out
 }
 
 int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w,
-  char **w_to_job){
+  char **w_to_job, int sock){
   //variable declaration for father process
   int status, nwrite = 0, nread = 0; //child status and no of bytes written/read
   int *fifo_in = NULL, *fifo_out = NULL;
@@ -363,8 +368,8 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
   struct pollfd* fds = make_fds_array(num_workers, fifo_in);
   //father process
   while(1){
-    while(!readQueries(&queries, &queriesNo)) continue;
-    printf("Got queries:\n");
+    while(!readQueries(&queries, &queriesNo, sock)) continue;
+    //printf("Got queries:\n");
     for(int j=0; j<queriesNo; j++)
       printf("%s\n", queries[j]);
     //respawn any processes if nessecary
@@ -373,16 +378,6 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
       child_spawn(child, num_workers, total_pathsize, paths, job_to_w, w_to_job,
         fifo_in, fifo_out, docfile, &queries, queriesNo, fds);
       child_exit = 0;
-    }
-
-    //error checking for search
-    if(!strcmp(queries[0], "/search")){
-      if(queriesNo < 4 || strcmp(queries[queriesNo-2], "-d") ||
-      !atof(queries[queriesNo-1])){
-        fprintf(stderr, "No (valid) timeout was given for /search\n");
-        deleteQueries(&queries, queriesNo);
-        continue;
-      }
     }
 
     for(int i=0; i<num_workers; i++){
@@ -409,7 +404,6 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
     if(!strcmp(queries[0], "/search")){
       //start timeout
       int ctr = 0, ctrdead = 0;
-      alarm(atoi(queries[queriesNo-1]));
       while(ctr+ctrdead < num_workers){
         if(poll(fds, num_workers, -1) == -1){
           if(errno == EINTR)  //timeout
@@ -421,18 +415,13 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
         for(int j=0; j<num_workers; j++){
           if(fds[j].revents == POLLIN){
             //read search results
-            print_search_results(fifo_in[j], queries+1, queriesNo-3);
+            print_search_results(fifo_in[j], queries+1, queriesNo-1, sock);
             ctr++;
           }
           else if(fds[j].revents == POLLHUP){
             ctrdead++;
           }
         }
-      }
-      alarm(0);
-      if(send_kill){
-        send_kill_children(num_workers, child);
-        send_kill = 0;
       }
       //add poll again to synchronize
       if(poll(fds, num_workers, 0) == -1){
@@ -442,7 +431,7 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
       for(int j=0; j<num_workers; j++){
         if(fds[j].revents == POLLIN){
           //read search results
-          print_search_results(fifo_in[j], queries+1, queriesNo-3);
+          print_search_results(fifo_in[j], queries+1, queriesNo-1, sock);
           ctr++;
         }
         else if(fds[j].revents == POLLHUP){
@@ -481,7 +470,43 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
       break;
     }
     else{
-      fprintf(stderr, "Unknown command, it will be ignored\n");
+      //start timeout
+      int ctr = 0, ctrdead = 0;
+      while(ctr+ctrdead < num_workers){
+        if(poll(fds, num_workers, -1) == -1){
+          if(errno == EINTR)  //timeout
+            break;
+          perror("Error in poll ");
+          exit(3);
+        }
+        printf("Exited POLL\n");
+        for(int j=0; j<num_workers; j++){
+          if(fds[j].revents == POLLIN){
+            //read search results
+            print_search_results(fifo_in[j], queries, queriesNo, sock);
+            ctr++;
+          }
+          else if(fds[j].revents == POLLHUP){
+            ctrdead++;
+          }
+        }
+      }
+      //add poll again to synchronize
+      if(poll(fds, num_workers, 0) == -1){
+        perror("Error in poll ");
+        exit(3);
+      }
+      for(int j=0; j<num_workers; j++){
+        if(fds[j].revents == POLLIN){
+          //read search results
+          print_search_results(fifo_in[j], queries, queriesNo, sock);
+          ctr++;
+        }
+        else if(fds[j].revents == POLLHUP){
+          ctrdead++;
+        }
+      }
+      printf("Got answer back from %d workers and %d workers died\n", ctr, ctrdead);
     }
     deleteQueries(&queries, queriesNo);
   }

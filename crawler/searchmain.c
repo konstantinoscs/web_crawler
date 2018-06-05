@@ -11,7 +11,7 @@
 #include "searchutilities.h"
 #include "worker.h"
 
-int searchmain(int argc, char **argv){
+int searchmain(int argc, char **argv, int sock){
   char *docfile = NULL, **job_to_w=NULL, **w_to_job = NULL;
   int num_workers = 0;
   pid_t *child = NULL;
@@ -32,5 +32,5 @@ int searchmain(int argc, char **argv){
       exit(0);
     }
   }
-  parent_operate(num_workers, child, docfile, job_to_w, w_to_job);
+  parent_operate(num_workers, child, docfile, job_to_w, w_to_job, sock);
 }

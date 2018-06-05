@@ -186,11 +186,11 @@ int worker_operate(char *job_to_w, char *w_to_job){
     cmd = queries[0];
     if(!strcmp(cmd, "/search")){
       writeflag = 1;
-      Result **results = malloc((queriesNo-3)*sizeof(Result*));
-      int *results_no = malloc((queriesNo-3)*sizeof(int));
-      search(results, results_no, trie, queries+1, queriesNo-3, documents, &total_words_found);
+      Result **results = malloc((queriesNo-1)*sizeof(Result*));
+      int *results_no = malloc((queriesNo-1)*sizeof(int));
+      search(results, results_no, trie, queries+1, queriesNo-1, documents, &total_words_found);
       if(write){  //in case we had a timeout
-        for(int i=0; i<queriesNo-3; i++){
+        for(int i=0; i<queriesNo-1; i++){
           //printf("Results for query: %s\n", queries[i]);
           //write number of the documents
           if((nwrite = write(fout, results_no+i, sizeof(int))) == -1){
@@ -237,8 +237,8 @@ int worker_operate(char *job_to_w, char *w_to_job){
           }
         }
       }
-      print_results(logfile, results, results_no, queries+1, queriesNo-3);
-      for(int i=0; i<queriesNo-3; i++){
+      print_results(logfile, results, results_no, queries+1, queriesNo-1);
+      for(int i=0; i<queriesNo-1; i++){
         for(int j=0; j<results_no[i]; j++)
           free(results[i][j].lines);
         free(results[i]);
@@ -316,7 +316,66 @@ int worker_operate(char *job_to_w, char *w_to_job){
       break;
     }
     else{
-      fprintf(stderr, "Unknown command, it will be ignored\n");
+      writeflag = 1;
+      Result **results = malloc((queriesNo-3)*sizeof(Result*));
+      int *results_no = malloc((queriesNo-3)*sizeof(int));
+      search(results, results_no, trie, queries, queriesNo, documents, &total_words_found);
+      if(write){  //in case we had a timeout
+        for(int i=0; i<queriesNo; i++){
+          //printf("Results for query: %s\n", queries[i]);
+          //write number of the documents
+          if((nwrite = write(fout, results_no+i, sizeof(int))) == -1){
+            perror("Error in Writing ");
+            exit(2);
+          }
+          for(int j=0; j<results_no[i]; j++){
+            //write doc path
+            qlen = strlen(results[i][j].doc) +1;
+            if((nwrite = write(fout, &qlen, sizeof(int))) == -1){
+              perror("Error in Writing ");
+              exit(2);
+            }
+            //printf("Doc: %s\n", results[i][j].doc);
+            if((nwrite = write(fout, results[i][j].doc, qlen)) == -1){
+              perror("Error in Writing ");
+              exit(2);
+            }
+            //write number of lines
+            if((nwrite = write(fout, &results[i][j].size, sizeof(int))) == -1){
+              perror("Error in Writing ");
+              exit(2);
+            }
+            for(int k=0; k<results[i][j].size; k++){
+              //write line no
+              //printf("Line %d\n", results[i][j].line_no[k]);
+              if((nwrite = write(fout, &results[i][j].line_no[k], sizeof(int))) == -1){
+                perror("Error in Writing ");
+                exit(2);
+              }
+              //write line length
+              qlen = strlen(results[i][j].lines[k]) + 1;
+              if((nwrite = write(fout, &qlen, sizeof(int))) == -1){
+                perror("Error in Writing ");
+                exit(2);
+              }
+              //write line
+              //printf("%.50s\n", results[i][j].lines[k]);
+              if((nwrite = write(fout, results[i][j].lines[k], qlen)) == -1){
+                perror("Error in Writing ");
+                exit(2);
+              }
+            }
+          }
+        }
+      }
+      print_results(logfile, results, results_no, queries, queriesNo);
+      for(int i=0; i<queriesNo; i++){
+        for(int j=0; j<results_no[i]; j++)
+          free(results[i][j].lines);
+        free(results[i]);
+      }
+      free(results_no);
+      free(results);
     }
     deleteQueries(&queries, queriesNo);
   }

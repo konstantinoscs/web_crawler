@@ -11,6 +11,7 @@
 
 #include "crawler.h"
 #include "pool.h"
+#include "searchmain.h"
 #include "utilities.h"
 #include "wget.h"
 
@@ -24,7 +25,7 @@ pthread_mutex_t p_mut = PTHREAD_MUTEX_INITIALIZER;
 int pages_down = 0;
 unsigned long bytes_down = 0;
 
-int command(int sock, clock_t start);
+int command(int sock, clock_t start, char *save_dir);
 
 int set_socket(int port, int *sock){
   //int sock;
@@ -142,7 +143,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
     if((newsock = accept(c_sock, NULL, NULL)) < 0){
       perror("accept"); exit(-4);}
     //execute command
-    if(!command(newsock, start)){
+    if(!command(newsock, start, save_dir)){
     //if command was SHUTDOWN, send message to threads
       for(int i=0; i<no_threads; i++){
         place(&pool, NULL);
@@ -161,7 +162,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   free(threads);
 }
 
-int command(int sock, clock_t start){
+int command(int sock, clock_t start, char *save_dir){
   static char cmd[9];
   int i=0;
   while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!='\n') i++;
@@ -176,6 +177,10 @@ int command(int sock, clock_t start){
     return 0;
   }
   else if(!strcmp(cmd, "SEARCH")){
+    write_dirs("./doc", save_dir);
+    char *argv[] = { "./JobExecutor", "-d", "./doc", "-w", "4"};
+    int arc = 5;
+    searchmain(arc, argv, sock);
   }
   else{
     printf("Unknown command!\n");
