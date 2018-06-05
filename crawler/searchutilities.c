@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +35,8 @@ int parse_docfile(char* doc, char*** paths, int *pathsize){
   int wordm = 2, wordc=0; //start from a word with 2 characters
   int ch;
   FILE *docf = fopen(doc, "r");
+  if(!docf)
+    fprintf(stderr, "Couldn't open file!\n");
   *pathsize = 0;
 
   *paths = malloc(docm*sizeof(char*));
@@ -108,7 +111,8 @@ int readQueries(char ***queries, int *queriesNo, int sock){
 
   *queriesNo = 2;
   *queries = malloc((*queriesNo)*sizeof(char*));
-  while(ch!='\n'){
+  printf("Before while");
+  while(ch!=13 && ch!='\n'){
     wordm = 2;    //start from 1 character (plus '\0')
     wordc = 0;
     if(queriesc == *queriesNo){
@@ -117,13 +121,17 @@ int readQueries(char ***queries, int *queriesNo, int sock){
     }
     (*queries)[queriesc] = malloc(wordm);
     read(sock, &ch, 1);
-    while(ch!= ' ' && ch!='\r'){
-      if(wordc+1 == wordm){     //chech if reallocation needed
+    printf("read char: %c\n", ch);
+    while(ch!= ' ' && ch!=13 && ch!='\n'){
+      if(wordc+1 == wordm){     //check if reallocation needed
         wordm *= 2;
         (*queries)[queriesc] = realloc((*queries)[queriesc], wordm);
       }
       (*queries)[queriesc][wordc++] = ch;
+      printf("read char: %d\n", ch);
+      read(sock, &ch, 1);
     }
+    printf("out of one query");
     (*queries)[queriesc][wordc] ='\0';
     (*queries)[queriesc] = realloc((*queries)[queriesc], wordc+1); //shrink tf
     queriesc++;

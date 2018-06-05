@@ -104,7 +104,9 @@ TrieNode* makeTrie(Registry *documents, int docsize){
   init_trie(trie, documents[0].text[0][0]);
   for(int j=0; j<docsize; j++){
     for(int i=0; i<documents[j].lines; i++){
+      //printf("newline!\n");
       ch = ' ';
+      if(!strlen(documents[j].text[i])) continue;
       subs = documents[j].text[i];
       while(isspace(subs[0]))   //set substring to new word
         subs++;
@@ -117,6 +119,11 @@ TrieNode* makeTrie(Registry *documents, int docsize){
         word = subs;
         if(trie->letter > word[0])     //swap root to maintain order (& law)
           swap_root(&trie, word[0]);
+        //printf("Inserting word with len %d\n", len);
+        if(!len) continue;
+        /*for(int k=0; k<len; k++)
+          printf("%d ",word[k]);
+        putchar('\n');*/
         //insert to trie
         insert_in_trie(trie, word, 0, len, documents[j].path, i, j);
         subs += len;

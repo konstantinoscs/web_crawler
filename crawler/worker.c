@@ -109,7 +109,7 @@ int worker_operate(char *job_to_w, char *w_to_job){
   printf("LOAD TO TRIE\n");
   //here load everything to memory - trie
   for(int i=0; i<pathsize; i++){
-    printf("Testing path:%s\n", paths[i]);
+    //printf("Testing path:%s\n", paths[i]);
     if ((dir = opendir(paths[i])) != NULL) {
       /* print all the files and directories within directory */
       while ((ent = readdir(dir)) != NULL) {
@@ -138,6 +138,8 @@ int worker_operate(char *job_to_w, char *w_to_job){
       return EXIT_FAILURE;
     }
   }
+  printf("Docsize: %d\n", docc);
+  //return;
   printf("MAKE TRIE\n");
   //here make trie and insert
   trie = makeTrie(documents, docc);
@@ -319,8 +321,8 @@ int worker_operate(char *job_to_w, char *w_to_job){
     }
     else{
       writeflag = 1;
-      Result **results = malloc((queriesNo-3)*sizeof(Result*));
-      int *results_no = malloc((queriesNo-3)*sizeof(int));
+      Result **results = malloc((queriesNo)*sizeof(Result*));
+      int *results_no = malloc((queriesNo)*sizeof(int));
       search(results, results_no, trie, queries, queriesNo, documents, &total_words_found);
       if(write){  //in case we had a timeout
         for(int i=0; i<queriesNo; i++){

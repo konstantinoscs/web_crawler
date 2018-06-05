@@ -42,6 +42,7 @@ int wget(int sock, char *page, char *save_dir, char *host, int s_port, char **do
 
 void send_get(int sock, char *page, char *host, int s_port){
   static char port[6] = "00000";
+  printf("Requesting page: %s\n", page);
   sprintf(port, "%d", s_port);
   write(sock, "GET " ,4);
   write(sock, page, strlen(page));
@@ -152,7 +153,7 @@ void save_to_dir(char *save_dir, char *page, char* data){
   char *path = NULL;
   FILE *fp;
   //check if save dir is "folder" or "folder/"
-  printf("%c\n", save_dir[strlen(save_dir)-1]);
+  //printf("Save_dir %c\n", save_dir[strlen(save_dir)-1]);
   if(save_dir[strlen(save_dir)-1] == '/'){
     path = malloc(strlen(save_dir)+ strlen(page));
     sprintf(path, "%s%s", save_dir, page+1);

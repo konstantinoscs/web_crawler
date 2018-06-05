@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -304,13 +305,14 @@ void parent_mincount(int queriesNo, int num_workers, int *fifo_in, int *fifo_out
 }
 
 int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w,
-  char **w_to_job, int sock){
+  char **w_to_job, int sock, int c_sock){
   //variable declaration for father process
   int status, nwrite = 0, nread = 0; //child status and no of bytes written/read
   int *fifo_in = NULL, *fifo_out = NULL;
   char **queries = NULL, **paths = NULL;
   int total_pathsize=0, pathsize=0, paths_until_now=0;
   int queriesNo, qlen = 0;
+  int second_round = 0;
   //initialize signal handlers
   struct sigaction new_worker, alarmhand;
   new_worker.sa_handler = child_death;
@@ -368,8 +370,14 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
   struct pollfd* fds = make_fds_array(num_workers, fifo_in);
   //father process
   while(1){
+    if(second_round){
+      printf("Second round\n");
+      if((sock = accept(c_sock, NULL, NULL)) < 0){
+        perror("accept"); exit(-4);}
+    }
+    printf("trying to read queries\n");
     while(!readQueries(&queries, &queriesNo, sock)) continue;
-    //printf("Got queries:\n");
+    printf("Got queries:\n");
     for(int j=0; j<queriesNo; j++)
       printf("%s\n", queries[j]);
     //respawn any processes if nessecary
@@ -507,7 +515,9 @@ int parent_operate(int num_workers, pid_t *child, char *docfile, char **job_to_w
         }
       }
       printf("Got answer back from %d workers and %d workers died\n", ctr, ctrdead);
+      second_round = 1;
     }
+    close(sock);
     deleteQueries(&queries, queriesNo);
   }
 

@@ -25,7 +25,7 @@ pthread_mutex_t p_mut = PTHREAD_MUTEX_INITIALIZER;
 int pages_down = 0;
 unsigned long bytes_down = 0;
 
-int command(int sock, clock_t start, char *save_dir);
+int command(int sock, clock_t start, char *save_dir, int c_sock);
 
 int set_socket(int port, int *sock){
   //int sock;
@@ -53,7 +53,6 @@ void *thread_crawl(void *info){
 
   while(1){
     site = obtain(&pool);
-    //printf("Got site: %s\n", site);
     if(!site) break;
     if((sock = socket(AF_INET , SOCK_STREAM , 0)) < 0){
     perror("Socket"); exit(-2);}
@@ -67,7 +66,6 @@ void *thread_crawl(void *info){
         bytes_down += strlen(data);
       pthread_mutex_unlock(&p_mut);
       parse_links(data, &links, &linksize);
-      //printf("parsed links %d\n", linksize);
       //insert new links at pool
       insert_links(links, linksize);
       free_2darray(links, linksize);
@@ -143,7 +141,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
     if((newsock = accept(c_sock, NULL, NULL)) < 0){
       perror("accept"); exit(-4);}
     //execute command
-    if(!command(newsock, start, save_dir)){
+    if(!command(newsock, start, save_dir, c_sock)){
     //if command was SHUTDOWN, send message to threads
       for(int i=0; i<no_threads; i++){
         place(&pool, NULL);
@@ -162,7 +160,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   free(threads);
 }
 
-int command(int sock, clock_t start, char *save_dir){
+int command(int sock, clock_t start, char *save_dir, int c_sock){
   static char cmd[9];
   int i=0;
   while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!=' ' && cmd[i]!='\n') i++;
@@ -180,7 +178,7 @@ int command(int sock, clock_t start, char *save_dir){
     //write_dirs("./doc", save_dir);
     char *argv[] = { "./JobExecutor", "-d", "./doc", "-w", "1"};
     int arc = 5;
-    searchmain(arc, argv, sock);
+    searchmain(arc, argv, sock, c_sock);
   }
   else{
     printf("Unknown command!\n");
