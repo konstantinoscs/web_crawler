@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 #include "parent.h"
-#include "utilities.h"
+#include "searchutilities.h"
 #include "worker.h"
 
 int searchmain(int argc, char **argv){
@@ -16,8 +16,8 @@ int searchmain(int argc, char **argv){
   int num_workers = 0;
   pid_t *child = NULL;
 
-  if(!parse_arguments(argc, argv, &docfile, &num_workers)){
-    exit(-1);
+  if(!s_parse_arguments(argc, argv, &docfile, &num_workers)){
+    return -1;
   }
   child = malloc(num_workers*sizeof(pid_t));
   make_fifo_arrays(&job_to_w, &w_to_job, num_workers);
@@ -29,7 +29,6 @@ int searchmain(int argc, char **argv){
       worker_operate(job_to_w[i], w_to_job[i]);
       //free everything
       free_worker(child, docfile, num_workers, job_to_w, w_to_job);
-      printf("child %d exiting!\n", i);
       exit(0);
     }
   }

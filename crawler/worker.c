@@ -13,7 +13,7 @@
 #include "registry.h"
 #include "search.h"
 #include "trie.h"
-#include "utilities.h"
+#include "searchutilities.h"
 
 volatile sig_atomic_t writeflag = 1;
 

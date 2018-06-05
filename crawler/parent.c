@@ -12,7 +12,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "utilities.h"
+#include "searchutilities.h"
 #include "worker.h"
 
 volatile sig_atomic_t send_kill;

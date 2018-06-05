@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 
-int parse_arguments(int argc, char ** argv, char** docfile, int *num_workers){
+int s_parse_arguments(int argc, char ** argv, char** docfile, int *num_workers){
   int i=1;
   if(argc !=5 ){
     fprintf(stderr, "Wrong number of arguments given\n");

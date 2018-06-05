@@ -1,9 +1,9 @@
-#ifndef UTILITIES_H
-#define UTILITIES_H
+#ifndef SEARCHUTILITIES_H
+#define SEARCHUTILITIES_H
 
 #include <sys/types.h>
 
-int parse_arguments(int argc, char ** argv, char** docfile, int *num_workers);
+int s_parse_arguments(int argc, char ** argv, char** docfile, int *num_workers);
 int parse_docfile(char* doc, char*** paths, int *pathsize);
 int make_fifo_arrays(char ***job_to_w, char***w_to_job, int num_workers);
 int readQueries(char ***queries, int *queriesNo);
