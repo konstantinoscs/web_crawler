@@ -106,10 +106,10 @@ int worker_operate(char *job_to_w, char *w_to_job){
       break;
     }
   }
-
+  printf("LOAD TO TRIE\n");
   //here load everything to memory - trie
   for(int i=0; i<pathsize; i++){
-    //printf("Testing path:%s\n", paths[i]);
+    printf("Testing path:%s\n", paths[i]);
     if ((dir = opendir(paths[i])) != NULL) {
       /* print all the files and directories within directory */
       while ((ent = readdir(dir)) != NULL) {
@@ -133,17 +133,19 @@ int worker_operate(char *job_to_w, char *w_to_job){
     }
     else {
     // could not open directory
-      perror ("error");
+      printf("hm %s", paths[i]);
+      perror("error");
       return EXIT_FAILURE;
     }
   }
+  printf("MAKE TRIE\n");
   //here make trie and insert
   trie = makeTrie(documents, docc);
   //here
   filename = malloc(strlen("log/Worker_")+find_width(pid)+1);
   sprintf(filename, "log/Worker_%d", pid);
   logfile = fopen(filename, "w");
-
+  printf("READY QUERY\n");
   while(1){
     nread = read(fin, &queriesNo, sizeof(int));
     if (nread < 0) {

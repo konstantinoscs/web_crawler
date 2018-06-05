@@ -50,10 +50,10 @@ void *thread_crawl(void *info){
   ThreadInfo *t_info = (ThreadInfo *) info;
   int sock, linksize;
   char *site = NULL, **links = NULL, *data = NULL;
-  
+
   while(1){
     site = obtain(&pool);
-    printf("Got site: %s\n", site);
+    //printf("Got site: %s\n", site);
     if(!site) break;
     if((sock = socket(AF_INET , SOCK_STREAM , 0)) < 0){
     perror("Socket"); exit(-2);}
@@ -67,7 +67,7 @@ void *thread_crawl(void *info){
         bytes_down += strlen(data);
       pthread_mutex_unlock(&p_mut);
       parse_links(data, &links, &linksize);
-      printf("parsed links %d\n", linksize);
+      //printf("parsed links %d\n", linksize);
       //insert new links at pool
       insert_links(links, linksize);
       free_2darray(links, linksize);
@@ -131,14 +131,14 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   set_socket(c_port, &c_sock);
   //place first link at pool
   start_link = extract_link(host, start_url);
-  printf("start link:%s\n", start_link);
+  //printf("start link:%s\n", start_link);
   insert_links(&start_link, 1);
   //place(&pool, start_link);
   //pthread_cond_signal(&cond_nonempty);
-  printf("Just waiting!\n");
+  //printf("Just waiting!\n");
   //start crawling
 
-  printf("command ready\n");
+  //printf("command ready\n");
   while(1){
     if((newsock = accept(c_sock, NULL, NULL)) < 0){
       perror("accept"); exit(-4);}

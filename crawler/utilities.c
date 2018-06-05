@@ -111,7 +111,7 @@ void parse_links(char *data, char ***links, int *linksize){
 
 void insert_links(char **links, int linksize){
   for(int i=0; i<linksize; i++){
-    printf("%s\n", links[i]);
+    //printf("%s\n", links[i]);
     pthread_mutex_lock(&l_mut);
       if(!unsafe_search(&set, links[i])){
         unsafe_place(&set, links[i]);
