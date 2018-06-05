@@ -25,7 +25,7 @@ pthread_mutex_t p_mut = PTHREAD_MUTEX_INITIALIZER;
 int pages_down = 0;
 unsigned long bytes_down = 0;
 
-int command(int sock, clock_t start, char *save_dir, int c_sock);
+int command(int sock, clock_t start, char *save_dir, int c_sock, int no_threads);
 
 int set_socket(int port, int *sock){
   //int sock;
@@ -141,7 +141,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
     if((newsock = accept(c_sock, NULL, NULL)) < 0){
       perror("accept"); exit(-4);}
     //execute command
-    if(!command(newsock, start, save_dir, c_sock)){
+    if(!command(newsock, start, save_dir, c_sock, no_threads)){
     //if command was SHUTDOWN, send message to threads
       for(int i=0; i<no_threads; i++){
         place(&pool, NULL);
@@ -160,7 +160,7 @@ int crawler_operate(char *host, char *save_dir, char *start_url, int c_port,
   free(threads);
 }
 
-int command(int sock, clock_t start, char *save_dir, int c_sock){
+int command(int sock, clock_t start, char *save_dir, int c_sock, int no_threads){
   static char cmd[9];
   int i=0;
   while((read(sock, cmd+i, 1) > 0) && i<8 && cmd[i]!=' ' && cmd[i]!='\n') i++;
@@ -175,6 +175,12 @@ int command(int sock, clock_t start, char *save_dir, int c_sock){
     return 0;
   }
   else if(!strcmp(cmd, "SEARCH")){
+    pthread_mutex_lock(&mtx);
+    if(stuck != no_threads){
+      printf("Crawling in progress. Please wait...\n");
+      return 0;
+    }
+    pthread_mutex_unlock(&mtx);
     //write_dirs("./doc", save_dir);
     char *argv[] = { "./JobExecutor", "-d", "./doc", "-w", "1"};
     int arc = 5;
