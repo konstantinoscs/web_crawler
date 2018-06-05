@@ -175,6 +175,8 @@ int command(int sock, clock_t start){
   else if(!strcmp(cmd, "SHUTDOWN")){
     return 0;
   }
+  else if(!strcmp(cmd, "SEARCH")){
+  }
   else{
     printf("Unknown command!\n");
   }

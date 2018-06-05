@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE
+#define _BSD_SOURCE
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>

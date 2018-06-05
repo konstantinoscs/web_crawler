@@ -15,4 +15,5 @@ int check_dir(char *mixed_path);
 void parse_links(char *data, char ***links, int *linksize);
 void insert_links(char **links, int linksize);
 int is_ip(char *host_or_ip);
+void write_dirs(char *docname, char*save_dir);
 #endif

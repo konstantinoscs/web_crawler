@@ -1,4 +1,6 @@
+#define _BSD_SOURCE
 #include <ctype.h>
+#include <dirent.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,5 +119,20 @@ void insert_links(char **links, int linksize){
         pthread_cond_signal(&cond_nonempty);
       }
     pthread_mutex_unlock(&l_mut);
+  }
+}
+
+void write_dirs(char *docname, char*save_dir){
+  FILE *fp = fopen(docname, "w");
+  DIR *dir;
+  struct dirent *ent;
+  if ((dir = opendir(save_dir)) != NULL) {
+      /* print all the files and directories within directory */
+      while ((ent = readdir (dir)) != NULL) {
+        if(ent->d_type != DT_DIR)
+          continue;
+        //initialize new registry
+        fprintf(fp, "%s\n", ent->d_name);
+      }
   }
 }
