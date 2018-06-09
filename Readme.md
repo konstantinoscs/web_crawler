@@ -1,8 +1,8 @@
-Systems Programming project
+My final Systems Programming project
 
 Webcreator.sh:
 A shell script that creates a number of websites
-Run:
+
 
 Server:
 A simple web server that only accept GET requests.
